@@ -1,0 +1,7 @@
+node_modules
+.git
+.DS_Store
+packages/*/node_modules
+packages/*/dist
+packages/*/.next
+packages/*/.turbo

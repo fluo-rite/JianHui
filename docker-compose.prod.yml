@@ -1,0 +1,86 @@
+services:
+  mysql:
+    image: mysql:8.4
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-lowcode-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-jianhui-lowcode}
+    ports:
+      - "127.0.0.1:${MYSQL_HOST_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD:-lowcode-redis}
+    ports:
+      - "127.0.0.1:${REDIS_HOST_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD:-lowcode-redis} ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: server.Dockerfile
+    restart: always
+    environment:
+      PORT: 3000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-lowcode-root}
+      DB_DATABASE: ${MYSQL_DATABASE:-jianhui-lowcode}
+      DB_SYNCHRONIZE: ${DB_SYNCHRONIZE:-true}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-lowcode-redis}
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      ALI_OSS_REGION: ${ALI_OSS_REGION:-oss-cn-guangzhou}
+      ALI_OSS_ACCESS_KEY_ID: ${ALI_OSS_ACCESS_KEY_ID:-}
+      ALI_OSS_ACCESS_KEY_SECRET: ${ALI_OSS_ACCESS_KEY_SECRET:-}
+      ALI_OSS_BUCKET: ${ALI_OSS_BUCKET:-}
+      ALI_OSS_CUSTOM_DOMAIN: ${ALI_OSS_CUSTOM_DOMAIN:-}
+    ports:
+      - "127.0.0.1:${BACKEND_HOST_PORT:-5000}:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  release:
+    build:
+      context: .
+      dockerfile: release.Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/api}
+        NEXT_PUBLIC_RELEASE_BASE_PATH: ${NEXT_PUBLIC_RELEASE_BASE_PATH:-/release}
+    restart: always
+    environment:
+      PORT: 3000
+      API_INTERNAL_BASE_URL: http://backend:3000/api
+    ports:
+      - "127.0.0.1:${RELEASE_HOST_PORT:-4000}:3000"
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:
+  redis-data:
