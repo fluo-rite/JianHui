@@ -63,9 +63,9 @@ set -a
 . "$APP_DIR/.env"
 set +a
 
-docker compose -f "$COMPOSE_FILE" up -d --build --remove-orphans
+run_as_root docker compose -f "$COMPOSE_FILE" up -d --build --remove-orphans
 
-docker build \
+run_as_root docker build \
   --target builder \
   --build-arg VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}" \
   --build-arg VITE_RELEASE_BASE_URL="${VITE_RELEASE_BASE_URL:-https://fluorite.cyou/release}" \
@@ -73,21 +73,21 @@ docker build \
   -f client.Dockerfile \
   .
 
-docker rm -f "$CLIENT_BUILD_CONTAINER" >/dev/null 2>&1 || true
-docker create --name "$CLIENT_BUILD_CONTAINER" "$CLIENT_BUILD_IMAGE" >/dev/null
+run_as_root docker rm -f "$CLIENT_BUILD_CONTAINER" >/dev/null 2>&1 || true
+run_as_root docker create --name "$CLIENT_BUILD_CONTAINER" "$CLIENT_BUILD_IMAGE" >/dev/null
 
 rm -rf "$STATIC_STAGING_DIR"
 mkdir -p "$STATIC_STAGING_DIR"
 run_as_root mkdir -p "$STATIC_ROOT"
 run_as_root find "$STATIC_ROOT" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
-docker cp "$CLIENT_BUILD_CONTAINER:/app/packages/client/dist/." "$STATIC_STAGING_DIR"
+run_as_root docker cp "$CLIENT_BUILD_CONTAINER:/app/packages/client/dist/." "$STATIC_STAGING_DIR"
 run_as_root cp -a "$STATIC_STAGING_DIR/." "$STATIC_ROOT/"
-docker rm -f "$CLIENT_BUILD_CONTAINER" >/dev/null
+run_as_root docker rm -f "$CLIENT_BUILD_CONTAINER" >/dev/null
 rm -rf "$STATIC_STAGING_DIR"
 
 if [[ "$ENABLE_MAINTENANCE_ON_DEPLOY" == "true" ]]; then
   switch_nginx_mode "$NGINX_APP_CONF" "app"
 fi
 
-docker image prune -f >/dev/null 2>&1 || true
-docker compose -f "$COMPOSE_FILE" ps
+run_as_root docker image prune -f >/dev/null 2>&1 || true
+run_as_root docker compose -f "$COMPOSE_FILE" ps
