@@ -72,14 +72,17 @@ jobs:
           envs: DEPLOY_PATH,STATIC_ROOT,NGINX_ACTIVE_LINK,NGINX_APP_CONF,NGINX_MAINTENANCE_CONF,PROD_ENV_FILE
           script: |
             set -eu
+            run_as_root() {
+              sudo "$@"
+            }
             test -n "$DEPLOY_PATH"
             test "$DEPLOY_PATH" != "/"
-            mkdir -p "$DEPLOY_PATH"
-            find "$DEPLOY_PATH" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
-            tar -xzf "/tmp/${{ env.DEPLOY_ARCHIVE }}" -C "$DEPLOY_PATH" --strip-components=1
-            rm -f "/tmp/${{ env.DEPLOY_ARCHIVE }}"
-            printf '%s\n' "$PROD_ENV_FILE" > "$DEPLOY_PATH/.env"
-            chmod +x "$DEPLOY_PATH/scripts/deploy.sh"
+            run_as_root mkdir -p "$DEPLOY_PATH"
+            run_as_root find "$DEPLOY_PATH" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+            run_as_root tar -xzf "/tmp/${{ env.DEPLOY_ARCHIVE }}" -C "$DEPLOY_PATH" --strip-components=1
+            run_as_root rm -f "/tmp/${{ env.DEPLOY_ARCHIVE }}"
+            printf '%s\n' "$PROD_ENV_FILE" | run_as_root tee "$DEPLOY_PATH/.env" >/dev/null
+            run_as_root chmod +x "$DEPLOY_PATH/scripts/deploy.sh"
             APP_DIR="$DEPLOY_PATH" \
             STATIC_ROOT="$STATIC_ROOT" \
             NGINX_ACTIVE_LINK="$NGINX_ACTIVE_LINK" \

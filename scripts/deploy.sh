@@ -14,14 +14,7 @@ NGINX_MAINTENANCE_CONF="${NGINX_MAINTENANCE_CONF:-/etc/nginx/snippets/fluorite-m
 ENABLE_MAINTENANCE_ON_DEPLOY="${ENABLE_MAINTENANCE_ON_DEPLOY:-true}"
 
 run_as_root() {
-  if [[ "${EUID}" -eq 0 ]]; then
-    "$@"
-  elif command -v sudo >/dev/null 2>&1; then
-    sudo "$@"
-  else
-    echo "root privileges are required to manage nginx and static files" >&2
-    exit 1
-  fi
+  sudo "$@"
 }
 
 reload_nginx() {
