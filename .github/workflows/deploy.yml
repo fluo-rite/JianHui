@@ -20,6 +20,12 @@ jobs:
       NGINX_ACTIVE_LINK: ${{ secrets.NGINX_ACTIVE_LINK }}
       NGINX_APP_CONF: ${{ secrets.NGINX_APP_CONF }}
       NGINX_MAINTENANCE_CONF: ${{ secrets.NGINX_MAINTENANCE_CONF }}
+      SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      ALERT_EMAIL_FROM: ${{ secrets.ALERT_EMAIL_FROM }}
+      ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -82,17 +88,17 @@ jobs:
             "$DEPLOY_PATH/scripts/deploy.sh"
 
       - name: Send failure email
-        if: ${{ failure() && secrets.SMTP_SERVER != '' && secrets.SMTP_PORT != '' && secrets.SMTP_USERNAME != '' && secrets.SMTP_PASSWORD != '' && secrets.ALERT_EMAIL_FROM != '' && secrets.ALERT_EMAIL_TO != '' }}
+        if: ${{ failure() && env.SMTP_SERVER != '' && env.SMTP_PORT != '' && env.SMTP_USERNAME != '' && env.SMTP_PASSWORD != '' && env.ALERT_EMAIL_FROM != '' && env.ALERT_EMAIL_TO != '' }}
         uses: dawidd6/action-send-mail@v6
         with:
-          server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ secrets.SMTP_PORT }}
+          server_address: ${{ env.SMTP_SERVER }}
+          server_port: ${{ env.SMTP_PORT }}
           secure: false
-          username: ${{ secrets.SMTP_USERNAME }}
-          password: ${{ secrets.SMTP_PASSWORD }}
+          username: ${{ env.SMTP_USERNAME }}
+          password: ${{ env.SMTP_PASSWORD }}
           subject: "[简汇部署失败] ${{ github.repository }} @ ${{ github.ref_name }}"
-          to: ${{ secrets.ALERT_EMAIL_TO }}
-          from: ${{ secrets.ALERT_EMAIL_FROM }}
+          to: ${{ env.ALERT_EMAIL_TO }}
+          from: ${{ env.ALERT_EMAIL_FROM }}
           html_body: |
             <h2>简汇部署失败</h2>
             <p><strong>仓库：</strong>${{ github.repository }}</p>
