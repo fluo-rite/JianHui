@@ -12,11 +12,18 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-      DEPLOY_ARCHIVE: jianhui-deploy.tar.gz
+      DEPLOY_ARCHIVE: jianhui-release-bundle.tar.gz
       DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
       STATIC_ROOT: ${{ secrets.STATIC_ROOT }}
+      RELEASE_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+      GIT_SHA: ${{ github.sha }}
+      GIT_REF: ${{ github.ref_name }}
+      BACKEND_IMAGE: jianhui-backend:${{ github.run_id }}-${{ github.run_attempt }}
+      RELEASE_IMAGE: jianhui-release:${{ github.run_id }}-${{ github.run_attempt }}
       NGINX_ACTIVE_LINK: ${{ secrets.NGINX_ACTIVE_LINK }}
       NGINX_APP_CONF: ${{ secrets.NGINX_APP_CONF }}
       NGINX_MAINTENANCE_CONF: ${{ secrets.NGINX_MAINTENANCE_CONF }}
@@ -30,22 +37,58 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build deploy archive
-        run: |
-          ARCHIVE_PATH="$RUNNER_TEMP/$DEPLOY_ARCHIVE"
-          tar \
-            --exclude=.git \
-            --exclude=node_modules \
-            --exclude=packages/*/node_modules \
-            --exclude=packages/*/dist \
-            --exclude=packages/*/.next \
-            --exclude=packages/*/.turbo \
-            --exclude=.DS_Store \
-            --exclude="./$DEPLOY_ARCHIVE" \
-            -czf "$ARCHIVE_PATH" .
-          cp "$ARCHIVE_PATH" "$DEPLOY_ARCHIVE"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
 
-      - name: Upload archive to server
+      - name: Setup pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: pnpm build:share
+
+      - name: Build client static assets
+        env:
+          VITE_API_BASE_URL: /api
+          VITE_RELEASE_BASE_URL: https://fluorite.cyou/release
+        run: pnpm build:client
+
+      - name: Build backend image
+        run: docker build -t "$BACKEND_IMAGE" -f server.Dockerfile .
+
+      - name: Build release image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_BASE_URL=/api \
+            --build-arg NEXT_PUBLIC_RELEASE_BASE_PATH=/release \
+            -t "$RELEASE_IMAGE" \
+            -f release.Dockerfile \
+            .
+
+      - name: Prepare release bundle
+        run: |
+          BUNDLE_DIR="$RUNNER_TEMP/release-bundle"
+          mkdir -p "$BUNDLE_DIR/static" "$BUNDLE_DIR/images" "$BUNDLE_DIR/scripts"
+
+          cp -a packages/client/dist/. "$BUNDLE_DIR/static/"
+          cp docker-compose.runtime.yml "$BUNDLE_DIR/"
+          cp scripts/deploy.sh scripts/rollback.sh "$BUNDLE_DIR/scripts/"
+
+          printf 'BACKEND_IMAGE=%s\nRELEASE_IMAGE=%s\n' "$BACKEND_IMAGE" "$RELEASE_IMAGE" > "$BUNDLE_DIR/deploy-image.env"
+          printf 'RELEASE_ID=%s\nGIT_SHA=%s\nGIT_REF=%s\n' "$RELEASE_ID" "$GIT_SHA" "$GIT_REF" > "$BUNDLE_DIR/release-meta.env"
+
+          docker save -o "$BUNDLE_DIR/images/backend-image.tar" "$BACKEND_IMAGE"
+          docker save -o "$BUNDLE_DIR/images/release-image.tar" "$RELEASE_IMAGE"
+
+          tar -czf "$RUNNER_TEMP/$DEPLOY_ARCHIVE" -C "$BUNDLE_DIR" .
+          cp "$RUNNER_TEMP/$DEPLOY_ARCHIVE" "$DEPLOY_ARCHIVE"
+
+      - name: Upload bundle to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -60,6 +103,9 @@ jobs:
         env:
           DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
           STATIC_ROOT: ${{ env.STATIC_ROOT }}
+          RELEASE_ID: ${{ env.RELEASE_ID }}
+          GIT_SHA: ${{ env.GIT_SHA }}
+          GIT_REF: ${{ env.GIT_REF }}
           NGINX_ACTIVE_LINK: ${{ env.NGINX_ACTIVE_LINK }}
           NGINX_APP_CONF: ${{ env.NGINX_APP_CONF }}
           NGINX_MAINTENANCE_CONF: ${{ env.NGINX_MAINTENANCE_CONF }}
@@ -69,7 +115,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-          envs: DEPLOY_PATH,STATIC_ROOT,NGINX_ACTIVE_LINK,NGINX_APP_CONF,NGINX_MAINTENANCE_CONF,PROD_ENV_FILE
+          envs: DEPLOY_PATH,STATIC_ROOT,RELEASE_ID,GIT_SHA,GIT_REF,NGINX_ACTIVE_LINK,NGINX_APP_CONF,NGINX_MAINTENANCE_CONF,PROD_ENV_FILE
           script: |
             set -eu
             run_as_root() {
@@ -77,18 +123,25 @@ jobs:
             }
             test -n "$DEPLOY_PATH"
             test "$DEPLOY_PATH" != "/"
+            DEPLOY_ROOT="$(dirname "$DEPLOY_PATH")"
+            SOURCE_DIR="$DEPLOY_ROOT/incoming/$RELEASE_ID"
+            run_as_root rm -rf "$SOURCE_DIR"
+            run_as_root mkdir -p "$SOURCE_DIR"
             run_as_root mkdir -p "$DEPLOY_PATH"
-            run_as_root find "$DEPLOY_PATH" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
-            run_as_root tar -xzf "/tmp/${{ env.DEPLOY_ARCHIVE }}" -C "$DEPLOY_PATH" --strip-components=1
+            run_as_root tar -xzf "/tmp/${{ env.DEPLOY_ARCHIVE }}" -C "$SOURCE_DIR"
             run_as_root rm -f "/tmp/${{ env.DEPLOY_ARCHIVE }}"
             printf '%s\n' "$PROD_ENV_FILE" | run_as_root tee "$DEPLOY_PATH/.env" >/dev/null
-            run_as_root chmod +x "$DEPLOY_PATH/scripts/deploy.sh"
+            run_as_root chmod +x "$SOURCE_DIR/scripts/deploy.sh" "$SOURCE_DIR/scripts/rollback.sh"
             APP_DIR="$DEPLOY_PATH" \
+            SOURCE_DIR="$SOURCE_DIR" \
             STATIC_ROOT="$STATIC_ROOT" \
+            RELEASE_ID="$RELEASE_ID" \
+            GIT_SHA="$GIT_SHA" \
+            GIT_REF="$GIT_REF" \
             NGINX_ACTIVE_LINK="$NGINX_ACTIVE_LINK" \
             NGINX_APP_CONF="$NGINX_APP_CONF" \
             NGINX_MAINTENANCE_CONF="$NGINX_MAINTENANCE_CONF" \
-            "$DEPLOY_PATH/scripts/deploy.sh"
+            "$SOURCE_DIR/scripts/deploy.sh"
 
       - name: Send failure email
         if: ${{ failure() && env.SMTP_SERVER != '' && env.SMTP_PORT != '' && env.SMTP_USERNAME != '' && env.SMTP_PASSWORD != '' && env.ALERT_EMAIL_FROM != '' && env.ALERT_EMAIL_TO != '' }}
