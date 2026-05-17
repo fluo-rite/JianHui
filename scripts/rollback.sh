@@ -11,6 +11,9 @@ RELEASE_DIR="${RELEASES_DIR}/${TARGET_RELEASE_ID}"
 CURRENT_RELEASE_FILE="${CURRENT_RELEASE_FILE:-$DEPLOY_ROOT/current-release}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.runtime.yml}"
 IMAGE_ENV_FILE="${IMAGE_ENV_FILE:-deploy-image.env}"
+CONTAINER_REGISTRY_HOST="${CONTAINER_REGISTRY_HOST:-}"
+CONTAINER_REGISTRY_USERNAME="${CONTAINER_REGISTRY_USERNAME:-}"
+CONTAINER_REGISTRY_PASSWORD="${CONTAINER_REGISTRY_PASSWORD:-}"
 NGINX_ACTIVE_LINK="${NGINX_ACTIVE_LINK:-/etc/nginx/snippets/fluorite-active.conf}"
 NGINX_APP_CONF="${NGINX_APP_CONF:-/etc/nginx/snippets/fluorite-app.conf}"
 NGINX_MAINTENANCE_CONF="${NGINX_MAINTENANCE_CONF:-/etc/nginx/snippets/fluorite-maintenance.conf}"
@@ -37,7 +40,7 @@ if [[ -z "$TARGET_RELEASE_ID" ]]; then
   exit 1
 fi
 
-for required in "$RELEASE_DIR/$COMPOSE_FILE" "$RELEASE_DIR/$IMAGE_ENV_FILE" "$RELEASE_DIR/static" "$RELEASE_DIR/images"; do
+for required in "$RELEASE_DIR/$COMPOSE_FILE" "$RELEASE_DIR/$IMAGE_ENV_FILE" "$RELEASE_DIR/static"; do
   if [[ ! -e "$required" ]]; then
     echo "release artifact missing: $required" >&2
     exit 1
@@ -51,10 +54,8 @@ fi
 
 switch_nginx_mode "$NGINX_MAINTENANCE_CONF" "maintenance"
 
-if compgen -G "$RELEASE_DIR/images/*.tar" >/dev/null; then
-  for image_tar in "$RELEASE_DIR"/images/*.tar; do
-    run_as_root docker load -i "$image_tar"
-  done
+if [[ -n "$CONTAINER_REGISTRY_HOST" && -n "$CONTAINER_REGISTRY_USERNAME" && -n "$CONTAINER_REGISTRY_PASSWORD" ]]; then
+  printf '%s\n' "$CONTAINER_REGISTRY_PASSWORD" | run_as_root docker login "$CONTAINER_REGISTRY_HOST" -u "$CONTAINER_REGISTRY_USERNAME" --password-stdin
 fi
 
 run_as_root mkdir -p "$APP_DIR" "$STATIC_ROOT"
@@ -65,6 +66,12 @@ run_as_root chmod +x "$APP_DIR/rollback.sh"
 
 run_as_root find "$STATIC_ROOT" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 run_as_root cp -a "$RELEASE_DIR/static/." "$STATIC_ROOT/"
+
+run_as_root docker compose \
+  --env-file "$APP_DIR/.env" \
+  --env-file "$APP_DIR/$IMAGE_ENV_FILE" \
+  -f "$APP_DIR/$COMPOSE_FILE" \
+  pull
 
 run_as_root docker compose \
   --env-file "$APP_DIR/.env" \
