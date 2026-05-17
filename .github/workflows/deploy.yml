@@ -43,7 +43,7 @@ jobs:
             --exclude=.DS_Store \
             --exclude="./$DEPLOY_ARCHIVE" \
             -czf "$ARCHIVE_PATH" .
-          echo "ARCHIVE_PATH=$ARCHIVE_PATH" >> "$GITHUB_ENV"
+          cp "$ARCHIVE_PATH" "$DEPLOY_ARCHIVE"
 
       - name: Upload archive to server
         uses: appleboy/scp-action@v0.1.7
@@ -52,7 +52,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-          source: ${{ env.ARCHIVE_PATH }}
+          source: ${{ env.DEPLOY_ARCHIVE }}
           target: /tmp
 
       - name: Deploy on server
