@@ -101,7 +101,7 @@ jobs:
 
           cp -a packages/client/dist/. "$BUNDLE_DIR/static/"
           cp docker-compose.runtime.yml "$BUNDLE_DIR/"
-          cp scripts/deploy.sh scripts/rollback.sh "$BUNDLE_DIR/scripts/"
+          cp scripts/deploy.sh scripts/rollback.sh scripts/release-manage.sh scripts/release-switch.sh "$BUNDLE_DIR/scripts/"
 
           printf 'BACKEND_IMAGE=%s\nRELEASE_IMAGE=%s\n' "$BACKEND_IMAGE" "$RELEASE_IMAGE" > "$BUNDLE_DIR/deploy-image.env"
           printf 'RELEASE_ID=%s\nGIT_SHA=%s\nGIT_REF=%s\n' "$RELEASE_ID" "$GIT_SHA" "$GIT_REF" > "$BUNDLE_DIR/release-meta.env"
@@ -155,7 +155,7 @@ jobs:
             run_as_root tar -xzf "/tmp/${{ env.DEPLOY_ARCHIVE }}" -C "$SOURCE_DIR"
             run_as_root rm -f "/tmp/${{ env.DEPLOY_ARCHIVE }}"
             printf '%s\n' "$PROD_ENV_FILE" | run_as_root tee "$DEPLOY_PATH/.env" >/dev/null
-            run_as_root chmod +x "$SOURCE_DIR/scripts/deploy.sh" "$SOURCE_DIR/scripts/rollback.sh"
+            run_as_root chmod +x "$SOURCE_DIR/scripts/deploy.sh" "$SOURCE_DIR/scripts/rollback.sh" "$SOURCE_DIR/scripts/release-manage.sh" "$SOURCE_DIR/scripts/release-switch.sh"
             APP_DIR="$DEPLOY_PATH" \
             SOURCE_DIR="$SOURCE_DIR" \
             STATIC_ROOT="$STATIC_ROOT" \
@@ -168,7 +168,7 @@ jobs:
             NGINX_ACTIVE_LINK="$NGINX_ACTIVE_LINK" \
             NGINX_APP_CONF="$NGINX_APP_CONF" \
             NGINX_MAINTENANCE_CONF="$NGINX_MAINTENANCE_CONF" \
-            "$SOURCE_DIR/scripts/deploy.sh"
+            "$SOURCE_DIR/scripts/release-manage.sh" deploy
 
       - name: Send failure email
         if: ${{ failure() && env.SMTP_SERVER != '' && env.SMTP_PORT != '' && env.SMTP_USERNAME != '' && env.SMTP_PASSWORD != '' && env.ALERT_EMAIL_FROM != '' && env.ALERT_EMAIL_TO != '' }}
