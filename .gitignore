@@ -4,3 +4,4 @@ dist
 test
 docs
 src-nest-legacy
+.DS_Store
