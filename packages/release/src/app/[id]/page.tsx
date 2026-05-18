@@ -1,6 +1,8 @@
 import ComponentRender from "../../components/ComponentRender";
 import type { GetReleaseDataResponse } from "@lowcode/share";
 
+export const dynamic = "force-dynamic";
+
 const API_INTERNAL_BASE_URL =
   process.env.API_INTERNAL_BASE_URL || "http://127.0.0.1:5000/api";
 
@@ -9,7 +11,7 @@ async function getData(id: string) {
   const response = await fetch(
     `${API_INTERNAL_BASE_URL}/low_code/release?id=${id}`,
     {
-      cache: "no-cache",
+      cache: "no-store",
     }
   );
 
