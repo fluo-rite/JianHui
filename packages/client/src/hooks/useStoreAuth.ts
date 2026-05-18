@@ -1,18 +1,30 @@
-import { createStoreAuth } from "../store";
-import { computed, action } from "mobx";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { authActions } from "~/store";
+import { useAppDispatch, useAppSelector } from "~/store/hooks";
 
-export const storeAuth = createStoreAuth();
 export function useStoreAuth() {
+  const dispatch = useAppDispatch();
   const nav = useNavigate();
-  // 判断是否登录，创建可响应的计算属性的函数
-  const isLogin = computed(() => !!storeAuth.token);
+  const authStore = useAppSelector((state) => state.auth);
 
-  // 登录
-  const login = action(async (token: string) => {
-    storeAuth.token = `Bearer ${token}`;
-    localStorage.setItem("token", storeAuth.token);
+  function login(token: string) {
+    const bearerToken = `Bearer ${token}`;
+    dispatch(authActions.setToken(bearerToken));
+    localStorage.setItem("token", bearerToken);
     nav("/editor");
-  });
-  return { login, isLogin };
+  }
+
+  const isLogin = useMemo(
+    () => ({
+      get: () => !!authStore.token,
+    }),
+    [authStore.token]
+  );
+
+  return {
+    login,
+    isLogin,
+    store: authStore,
+  };
 }

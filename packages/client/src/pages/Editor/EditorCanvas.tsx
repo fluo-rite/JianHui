@@ -1,6 +1,4 @@
 import ClassNames from "classnames";
-import { toJS } from "mobx";
-import { observer } from "mobx-react-lite";
 import type { FC, ReactNode } from "react";
 import {
   useMemo,
@@ -23,12 +21,19 @@ import type { DragStartEvent } from "@dnd-kit/core";
 import { components } from "./LeftPanel/ComponentList";
 import { DeleteOutlined, UpOutlined, DownOutlined } from "@ant-design/icons";
 
+export interface EditorCanvasHandle {
+  setShowToolbar: (value: boolean) => void;
+}
+
+interface EditorToolbarHandle {
+  setRefrash: (value: boolean) => void;
+}
+
 // 获取公共组件
 export function generateComponent(conf: TBasicComponentConfig) {
   const Component = getComponentByType(conf.type);
 
-  // toJS将mobx装饰过的对象转成普通对象
-  return <Component {...toJS(conf.props)} key={conf.id} />;
+  return <Component {...conf.props} key={conf.id} />;
 }
 
 interface ComponentWrapperProps {
@@ -91,8 +96,8 @@ const EditorChooiseToolbarIconContainer: FC<{
 // 组件的工具栏
 const EditorChooiseToolbar: FC<{
   hidden: boolean;
-  onRef: any;
-}> = observer(({ hidden, onRef }) => {
+  onRef: Ref<EditorToolbarHandle>;
+}> = ({ hidden, onRef }) => {
   const {
     store,
     moveUpComponent,
@@ -255,13 +260,13 @@ const EditorChooiseToolbar: FC<{
       </div>
     )
   );
-});
+};
 
 // 低代码视图组件
 const EditorCanvas: FC<{
   store: TStoreComponents;
-  onRef: any;
-}> = observer(({ store, onRef }) => {
+  onRef: Ref<EditorCanvasHandle>;
+}> = ({ store, onRef }) => {
   const {
     getComponentById,
     isCurrentComponent,
@@ -274,7 +279,7 @@ const EditorCanvas: FC<{
   const [isDragable, setIsDragable] = useState(false);
   // 控制工具栏的显示隐藏，定义在当前组件，方便抛出给父组件滚动事件调用
   const [showToolbar, setShowToolbar] = useState(true);
-  const toolbarRef = createRef<any>();
+  const toolbarRef = createRef<EditorToolbarHandle>();
 
   // 点击组件设置成选中组件，已选中则不做操作
   function handleComponentClick(conf: TComponentPropsUnion) {
@@ -331,6 +336,6 @@ const EditorCanvas: FC<{
       <EditorChooiseToolbar hidden={!showToolbar} onRef={toolbarRef} />
     </>
   );
-});
+};
 
 export default EditorCanvas;

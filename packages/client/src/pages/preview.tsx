@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { FloatButton } from "antd";
 import { useNavigate } from "react-router-dom";
@@ -6,7 +5,7 @@ import { CaretLeftOutlined } from "@ant-design/icons";
 import { generateComponent } from "./Editor/EditorCanvas";
 import { useStoreComponents } from "~/hooks";
 
-const PreviewCanvas = observer(() => {
+const PreviewCanvas = () => {
   const { store, getComponentById, localStorageInStore } = useStoreComponents();
 
   // 从本地或者服务端读取组件信息
@@ -21,7 +20,7 @@ const PreviewCanvas = observer(() => {
         .map((conf) => generateComponent(conf))}
     </>
   );
-});
+};
 
 export default function Preview() {
   // 返回编辑页面

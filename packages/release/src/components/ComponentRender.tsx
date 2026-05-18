@@ -114,9 +114,7 @@ export default function ComponentRender({ data, id }: ComponentRenderType) {
           questionComponentValueField &&
           !comp.options[questionComponentValueField]
         )
-          return !["defaultRadio", "defaultChecked"].includes(
-            questionComponentValueField
-          );
+          return true
 
         return false;
       });

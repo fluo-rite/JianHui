@@ -1,9 +1,32 @@
-import { makeAutoObservable } from "mobx";
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
-export function createStoreAuth() {
-  // mobx 导出makeAutoObservable 接受一个对象返回可观察的对象，该对象是响应式的
-  return makeAutoObservable({
-    token: localStorage.getItem("token") ?? "",
-    details: null,
-  });
+export interface TStoreAuth {
+  token: string;
+  details: unknown | null;
 }
+
+const initialState: TStoreAuth = {
+  token: localStorage.getItem("token") ?? "",
+  details: null,
+};
+
+const authSlice = createSlice({
+  name: "auth",
+  initialState,
+  reducers: {
+    setToken(state, action: PayloadAction<string>) {
+      state.token = action.payload;
+    },
+    setDetails(state, action: PayloadAction<unknown | null>) {
+      state.details = action.payload;
+    },
+    clearAuth(state) {
+      state.token = "";
+      state.details = null;
+    },
+  },
+});
+
+export const authActions = authSlice.actions;
+
+export default authSlice.reducer;

@@ -1,17 +1,30 @@
-import { makeAutoObservable } from "mobx";
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
-interface IStorePage {
+export interface TStorePage {
   title: string;
   description: string;
   tdk: string;
 }
 
-export function createStorePage() {
-  return makeAutoObservable<IStorePage>({
-    title: "简汇页面",
-    description: "简汇页面详情",
-    tdk: "简汇,低代码,问卷,页面搭建,表单",
-  });
-}
+const initialState: TStorePage = {
+  title: "简汇页面",
+  description: "简汇页面详情",
+  tdk: "简汇,低代码,问卷,页面搭建,表单",
+};
 
-export type TStorePage = ReturnType<typeof createStorePage>;
+const pageSlice = createSlice({
+  name: "page",
+  initialState,
+  reducers: {
+    setPageTitle(state, action: PayloadAction<string>) {
+      state.title = action.payload;
+    },
+    updatePage(state, action: PayloadAction<Partial<TStorePage>>) {
+      Object.assign(state, action.payload);
+    },
+  },
+});
+
+export const pageActions = pageSlice.actions;
+
+export default pageSlice.reducer;

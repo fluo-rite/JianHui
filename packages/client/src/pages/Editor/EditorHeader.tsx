@@ -1,10 +1,9 @@
 import { useStorePage } from "~/hooks";
 import Left from "./Header/Left";
-import { observer } from "mobx-react-lite";
 import Center from "./Header/Center";
 import Right from "./Header/Right";
 
-const Header = observer(({}) => {
+const Header = () => {
   const { store: storePage } = useStorePage();
   return (
     <div className="flex items-center mx-6">
@@ -19,6 +18,6 @@ const Header = observer(({}) => {
       </div>
     </div>
   );
-});
+};
 
 export default Header;

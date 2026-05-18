@@ -116,7 +116,6 @@ export const FormListItem: FC<FormListItemProps<any>> = (props) => {
     // {link:'xxx'}  =>   [[link,'xxx']]
 
     // 初始化时组件属性没有 key， updateCurrentComponent 修改值同时需要新增;
-    // console.log(toJS(getCurrentComponentConfig.get()?.props));
     if (
       (getCurrentComponentConfig.get()?.props as any)?.[
         props.keyName ?? "items"

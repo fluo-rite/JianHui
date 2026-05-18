@@ -5,6 +5,7 @@ import EditorHeader from "./Editor/EditorHeader";
 import EditorLeftPanel from "./Editor/EditorLeftPanel";
 import EditorRightPanel from "./Editor/EditorRightPanel";
 import EditorCanvas from "./Editor/EditorCanvas";
+import type { EditorCanvasHandle } from "./Editor/EditorCanvas";
 
 import { useStoreComponents } from "~/hooks";
 function Editor() {
@@ -12,7 +13,7 @@ function Editor() {
   const { store: storeComps, localStorageInStore } = useStoreComponents();
 
   //  创建容器用于调用子组件的函数
-  const canvasRef = createRef<any>();
+  const canvasRef = createRef<EditorCanvasHandle>();
   // 创建容器绑定 dom 用于监听滚动事件
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +42,7 @@ function Editor() {
         // 滚动完毕后将状态设置回来
         setScrolling(false);
         // 滚动完毕后将小工具栏显示出来
-        canvasRef.current.setShowToolbar(true);
+        canvasRef.current?.setShowToolbar(true);
       }, 300);
     };
 

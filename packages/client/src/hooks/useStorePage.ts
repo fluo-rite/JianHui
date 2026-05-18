@@ -1,27 +1,18 @@
-import { action } from "mobx";
-import { createStorePage } from "~/store";
 import type { TStorePage } from "~/store";
-
-const storePage = createStorePage();
+import { pageActions } from "~/store";
+import { useAppDispatch, useAppSelector } from "~/store/hooks";
 
 export function useStorePage() {
-  /**
-   * 设置页面标题
-   * @param title - 页面标题
-   */
-  const setPageTitle = action((title: string) => {
-    storePage.title = title;
-  });
+  const dispatch = useAppDispatch();
+  const storePage = useAppSelector((state) => state.page);
 
-  /**
-   * 更新页面信息
-   * @param page - 部分页面信息
-   */
-  const updatePage = action((page: Partial<TStorePage>) => {
-    if (!page) return;
-    for (const [key, value] of Object.entries(page))
-      storePage[key as keyof TStorePage] = value;
-  });
+  function setPageTitle(title: string) {
+    dispatch(pageActions.setPageTitle(title));
+  }
+
+  function updatePage(page: Partial<TStorePage>) {
+    dispatch(pageActions.updatePage(page));
+  }
 
   return {
     updatePage,

@@ -1,31 +1,23 @@
 import type { FC } from "react";
-import { observer } from "mobx-react-lite";
-import { toJS } from "mobx";
 import { getComponentPropsByType } from "~/components/LowCodeComponents";
 import type { TStoreComponents } from "~/store";
 import { useStoreComponents } from "~/hooks";
 
-const ComponentFields: FC<{ store: TStoreComponents }> = observer(
-  ({ store }) => {
-    // 为选中组件展示
-    if (!store.currentCompConfig)
-      return <div style={{ textAlign: "center" }}>未选中组件</div>;
+const ComponentFields: FC<{ store: TStoreComponents }> = ({ store }) => {
+  const { getCurrentComponentConfig } = useStoreComponents();
 
-    const { getCurrentComponentConfig } = useStoreComponents();
+  if (!store.currentCompConfig)
+    return <div style={{ textAlign: "center" }}>未选中组件</div>;
 
-    // 右侧的配置属性组件
-    const ComponentProps = getComponentPropsByType(
-      getCurrentComponentConfig.get()!.type
-      // "image"
-    );
+  const currentComponent = getCurrentComponentConfig.get();
+  if (!currentComponent)
+    return <div style={{ textAlign: "center" }}>未选中组件</div>;
 
-    return (
-      <ComponentProps
-        {...toJS(getCurrentComponentConfig.get()?.props)}
-        id={getCurrentComponentConfig.get()?.id}
-      />
-    );
-  }
-);
+  const ComponentProps = getComponentPropsByType(currentComponent.type);
+
+  return (
+    <ComponentProps {...currentComponent.props} id={currentComponent.id} />
+  );
+};
 
 export default ComponentFields;

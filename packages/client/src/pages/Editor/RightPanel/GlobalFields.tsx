@@ -1,11 +1,10 @@
 import { Form, Input } from "antd";
-import { observer } from "mobx-react-lite";
 import type { FC } from "react";
 
 import { useStorePage } from "~/hooks";
 import type { TStorePage } from "~/store";
 
-const GlobalFields: FC<{ store: TStorePage }> = observer(({ store }) => {
+const GlobalFields: FC<{ store: TStorePage }> = ({ store }) => {
   const { updatePage } = useStorePage();
 
   // 当输入框的值发生改变时同步更新 store 的变量
@@ -32,6 +31,6 @@ const GlobalFields: FC<{ store: TStorePage }> = observer(({ store }) => {
       </Form.Item>
     </Form>
   );
-});
+};
 
 export default GlobalFields;

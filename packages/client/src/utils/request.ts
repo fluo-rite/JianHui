@@ -1,15 +1,16 @@
 import axios from "axios";
 import type { AxiosRequestConfig } from "axios";
-import { storeAuth } from "../hooks/useStoreAuth";
 import { message } from "antd";
+import { store } from "~/store";
 
 export const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 const request = axios.create({ baseURL: BASE_URL });
 
 // 请求拦截器
 request.interceptors.request.use((config) => {
-  if (storeAuth.token) {
-    config.headers.Authorization = storeAuth.token;
+  const token = store.getState().auth.token;
+  if (token) {
+    config.headers.Authorization = token;
   }
   return config;
 });
