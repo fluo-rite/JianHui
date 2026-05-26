@@ -6,7 +6,7 @@ import { authActions, store } from "~/store";
 export const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 const request = axios.create({ baseURL: BASE_URL });
 
-// 璇锋眰鎷︽埅鍣?
+// 定义请求拦截器，统一携带 token
 request.interceptors.request.use((config) => {
   const token = store.getState().auth.token;
   if (token) {
@@ -15,7 +15,7 @@ request.interceptors.request.use((config) => {
   return config;
 });
 
-// 鍝嶅簲鎷︽埅鍣?
+// 定义响应拦截器，统一
 request.interceptors.response.use(
   (response) => {
     const data = response?.data;
@@ -27,7 +27,7 @@ request.interceptors.response.use(
   (err) => {
     const response = err?.response;
     const status = response?.status;
-    const msg = response?.data?.msg ?? "鍑虹幇鏈煡閿欒";
+    const msg = response?.data?.msg ?? "请求异常";
 
     if (status === 401) {
       message.warning(msg);
