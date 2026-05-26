@@ -1,5 +1,6 @@
 import type { IRichTextComponentProps } from "@lowcode/share";
 import {
+  EMPTY_RICH_TEXT_CONTENT,
   fillComponentPropsByConfig,
   richTextComponentDefaultConfig,
 } from "@lowcode/share";
@@ -24,9 +25,14 @@ export default function RichTextComponentProps(
     <div className="flex items-center justify-center">
       <ReactQuill
         theme="snow"
-        value={props.content.value}
+        value={props.content.value?.raw ?? EMPTY_RICH_TEXT_CONTENT.raw}
         onChange={(_value, _delta, _source, editor) =>
-          updateCurrentComponent({ content: editor.getHTML() })
+          updateCurrentComponent({
+            content: {
+              format: "quill-delta",
+              raw: editor.getContents(),
+            },
+          })
         }
         ref={editorRef}
         modules={{

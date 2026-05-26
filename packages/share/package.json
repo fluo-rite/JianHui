@@ -18,6 +18,7 @@
     "build": "unbuild"
   },
   "dependencies": {
+    "quill-delta-to-html": "^0.12.1",
     "unbuild": "^2.0.0"
   }
 }

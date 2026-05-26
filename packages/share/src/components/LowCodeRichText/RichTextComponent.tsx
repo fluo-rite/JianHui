@@ -4,6 +4,10 @@ import {
   type IRichTextComponentProps,
   richTextComponentDefaultConfig,
 } from ".";
+import {
+  isRichTextContentEmpty,
+  renderRichTextContentToHtml,
+} from "./richText";
 
 export default function RichTextComponent(_props: IRichTextComponentProps) {
   const props = useMemo(() => {
@@ -13,12 +17,20 @@ export default function RichTextComponent(_props: IRichTextComponentProps) {
     };
   }, [_props]);
 
-  if (!props.content)
+  const html = useMemo(
+    () =>
+      isRichTextContentEmpty(props.content)
+        ? ""
+        : renderRichTextContentToHtml(props.content),
+    [props.content]
+  );
+
+  if (!html)
     return (
       <div id="placeholder" className="w-full h-20">
-        请在富文本输入内容
+        璇峰湪瀵屾枃鏈緭鍏ュ唴瀹?
       </div>
     );
 
-  return <div dangerouslySetInnerHTML={{ __html: props.content }} />;
+  return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }

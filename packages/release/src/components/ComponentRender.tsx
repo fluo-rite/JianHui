@@ -9,6 +9,7 @@ import { useRequest } from "ahooks";
 import { useImmer } from "use-immer";
 import { useState } from "react";
 import { message, Button } from "antd";
+import ReleaseRichText from "./ReleaseRichText";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 
@@ -19,6 +20,13 @@ function generateComponent(
   conf: TBasicComponentConfig,
   onUpdate: (value: any) => void
 ) {
+  if (conf.type === "richText") {
+    const props = conf.props as Record<string, unknown>;
+    const html = typeof props.renderedHtml === "string" ? props.renderedHtml : "";
+
+    return <ReleaseRichText html={html} key={conf.id} />;
+  }
+
   const Component = getComponentByType(conf.type);
 
   // 非输入类型直接渲染
