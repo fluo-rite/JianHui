@@ -1,4 +1,4 @@
-import { createRef, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTitle } from "ahooks";
 
 import EditorHeader from "./Editor/EditorHeader";
@@ -13,7 +13,7 @@ function Editor() {
   const { store: storeComps, localStorageInStore } = useStoreComponents();
 
   //  创建容器用于调用子组件的函数
-  const canvasRef = createRef<EditorCanvasHandle>();
+  const canvasRef = useRef<EditorCanvasHandle>();
   // 创建容器绑定 dom 用于监听滚动事件
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 

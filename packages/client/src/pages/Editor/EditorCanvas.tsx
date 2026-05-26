@@ -6,7 +6,7 @@ import {
   useEffect,
   useImperativeHandle,
   Ref,
-  createRef,
+  useRef,
 } from "react";
 import { getComponentByType } from "@lowcode/share";
 import type {
@@ -279,7 +279,7 @@ const EditorCanvas: FC<{
   const [isDragable, setIsDragable] = useState(false);
   // 控制工具栏的显示隐藏，定义在当前组件，方便抛出给父组件滚动事件调用
   const [showToolbar, setShowToolbar] = useState(true);
-  const toolbarRef = createRef<EditorToolbarHandle>();
+  const toolbarRef = useRef<EditorToolbarHandle>();
 
   // 点击组件设置成选中组件，已选中则不做操作
   function handleComponentClick(conf: TComponentPropsUnion) {
