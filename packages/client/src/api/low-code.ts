@@ -1,35 +1,71 @@
 import type {
-  PostReleaseRequest,
-  getQuestionDataByIdRequest,
+  GetQuestionDataByIdRequest,
+  UpdatePageRequest,
 } from "@lowcode/share";
 import request from "~/utils/request";
 
-// 页面发布接口
-export async function postRelease(data: PostReleaseRequest) {
-  return request("/low_code/release", {
-    data,
+export async function createPage() {
+  return request("/low_code/pages", {
     method: "POST",
   });
 }
 
-// 获取页面组件接口
-export async function getLowCodePage() {
-  return request("/low_code/release_with_user");
+export async function getPages() {
+  return request("/low_code/pages");
 }
 
-// 获取问卷组件借口
-export async function getQuestionComponents() {
-  return request("/low_code/question_components");
+export async function getPageDetail(id: number) {
+  return request(`/low_code/pages/${id}`);
 }
 
-// 获取问卷组件内容接口
-export async function getQuestionData() {
-  return request("/low_code/question_data");
+export async function updatePage(id: number, data: UpdatePageRequest) {
+  return request(`/low_code/pages/${id}`, {
+    data,
+    method: "PUT",
+  });
 }
 
-// 动态获取问卷组件内容接口
+export async function publishPage(id: number) {
+  return request(`/low_code/pages/${id}/publish`, {
+    method: "POST",
+  });
+}
+
+export async function closePage(id: number) {
+  return request(`/low_code/pages/${id}/close`, {
+    method: "POST",
+  });
+}
+
+export async function reopenPage(id: number) {
+  return request(`/low_code/pages/${id}/reopen`, {
+    method: "POST",
+  });
+}
+
+export async function deletePage(id: number) {
+  return request(`/low_code/pages/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getQuestionComponents(pageId: number) {
+  return request("/low_code/question_components", {
+    params: { page_id: pageId },
+  });
+}
+
+export async function getQuestionData(pageId: number) {
+  return request("/low_code/question_data", {
+    params: { page_id: pageId },
+  });
+}
+
 export async function getQuestionDataByTypeRequest(
-  data: getQuestionDataByIdRequest
+  data: GetQuestionDataByIdRequest
 ) {
-  return request("/low_code/get_question_data_by_id", { data, method: "POST" });
+  return request("/low_code/get_question_data_by_id", {
+    data,
+    method: "POST",
+  });
 }

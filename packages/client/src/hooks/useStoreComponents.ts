@@ -2,13 +2,12 @@ import { useMemo } from "react";
 import { message } from "antd";
 import { ulid } from "ulid";
 import type {
-  GetReleaseDataResponse,
+  GetPageDetailResponse,
   TComponentPropsUnion,
   TComponentTypes,
 } from "@lowcode/share";
-import { componentsActions, pageActions, type TStoreComponents } from "~/store";
+import { componentsActions, type TStoreComponents } from "~/store";
 import { useAppDispatch, useAppSelector } from "~/store/hooks";
-import { getLowCodePage } from "~/api/low-code";
 
 function buildCurrentComponentGetter(
   currentComponent: TComponentPropsUnion | null
@@ -21,6 +20,31 @@ function buildCurrentComponentGetter(
 function buildCurrentIndexGetter(currentIndex: number) {
   return {
     get: () => currentIndex,
+  };
+}
+
+function mapPageDetailToStore(data: GetPageDetailResponse): TStoreComponents {
+  const compConfigs = data.components.reduce<Record<string, TComponentPropsUnion>>(
+    (acc, comp) => {
+      const id = ulid();
+      acc[id] = {
+        id,
+        type: comp.type,
+        props: comp.options ?? {},
+      };
+      return acc;
+    },
+    {}
+  );
+
+  const sortableCompConfig = Object.keys(compConfigs);
+
+  return {
+    compConfigs,
+    sortableCompConfig,
+    currentCompConfig: sortableCompConfig[0] ?? null,
+    copyedCompConig: null,
+    itemsExpandIndex: 0,
   };
 }
 
@@ -156,87 +180,8 @@ export function useStoreComponents() {
     dispatch(componentsActions.replacePresent(value));
   }
 
-  function storeInLocalStorage() {
-    localStorage.setItem("compConfig", JSON.stringify(componentsStore.compConfigs));
-    localStorage.setItem(
-      "sortableCompConfig",
-      JSON.stringify(componentsStore.sortableCompConfig)
-    );
-    localStorage.setItem(
-      "currentCompConfig",
-      JSON.stringify(componentsStore.currentCompConfig)
-    );
-    localStorage.setItem("store_time", String(Date.now()));
-
-    message.success("保存成功");
-  }
-
-  async function readDataFromServer() {
-    const { data } = (await getLowCodePage()) as {
-      data?: GetReleaseDataResponse;
-    };
-    const components = data?.components ?? [];
-    const compConfigs = components.reduce<Record<string, TComponentPropsUnion>>(
-      (acc, comp) => {
-        const id = ulid();
-        acc[id] = {
-          id,
-          type: comp.type,
-          props: comp.options ?? {},
-        };
-        return acc;
-      },
-      {}
-    );
-
-    const sortableCompConfig = Object.keys(compConfigs);
-    dispatch(
-      componentsActions.replacePresent({
-        compConfigs,
-        sortableCompConfig,
-        currentCompConfig: sortableCompConfig[0] ?? null,
-      })
-    );
-
-    if (data) {
-      dispatch(
-        pageActions.updatePage({
-          tdk: data.tdk,
-          title: data.page_name,
-          description: data.desc,
-        })
-      );
-      message.success("已自动从服务器读取数据");
-    } else {
-      message.info("当前账号还没有发布页面，已为你创建空白画布");
-    }
-  }
-
-  async function localStorageInStore() {
-    const compConfig = localStorage.getItem("compConfig");
-    const sortableCompConfig = localStorage.getItem("sortableCompConfig");
-    const currentCompConfig = localStorage.getItem("currentCompConfig");
-    const storeTime = localStorage.getItem("store_time");
-    const releaseTime = localStorage.getItem("release_time");
-
-    if (compConfig && compConfig !== "{}") {
-      const shouldUseDraft =
-        storeTime && Number(storeTime) > (releaseTime ? Number(releaseTime) : 0);
-
-      if (shouldUseDraft) {
-        dispatch(
-          componentsActions.replacePresent({
-            compConfigs: JSON.parse(compConfig),
-            sortableCompConfig: JSON.parse(sortableCompConfig ?? "[]"),
-            currentCompConfig: JSON.parse(currentCompConfig ?? "null"),
-          })
-        );
-        message.success("已自动从草稿中读取数据");
-        return;
-      }
-    }
-
-    await readDataFromServer();
+  function replaceByPageDetail(data: GetPageDetailResponse) {
+    dispatch(componentsActions.replacePresent(mapPageDetailToStore(data)));
   }
 
   return {
@@ -259,7 +204,6 @@ export function useStoreComponents() {
     pasteCopyedComponent,
     removeCurrentComponent,
     getCurrentComponentIndex,
-    storeInLocalStorage,
-    localStorageInStore,
+    replaceByPageDetail,
   };
 }

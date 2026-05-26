@@ -14,9 +14,19 @@ export function useStorePage() {
     dispatch(pageActions.updatePage(page));
   }
 
+  function replacePage(page: TStorePage) {
+    dispatch(pageActions.replacePage(page));
+  }
+
+  function resetPage() {
+    dispatch(pageActions.resetPage());
+  }
+
   return {
     updatePage,
     setPageTitle,
+    replacePage,
+    resetPage,
     store: storePage,
   };
 }

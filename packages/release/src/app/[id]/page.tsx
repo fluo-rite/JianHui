@@ -37,6 +37,17 @@ interface PageType {
 export default async function Page({ params }: PageType) {
   const data = await getData(params.id);
 
+  if (data.status === "closed") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f5f5] p-6">
+        <div className="rounded-xl bg-white p-10 text-center shadow-sm">
+          <h1 className="mb-3 text-2xl font-semibold">页面已关闭</h1>
+          <p className="text-gray-500">当前问卷已暂停访问，暂时无法填写。</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="App">
       <ComponentRender data={data} id={params.id} />

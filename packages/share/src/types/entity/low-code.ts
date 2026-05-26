@@ -1,6 +1,7 @@
 import { TComponentTypes } from "../..";
 
-// 页面表属性类型
+export type TPageStatus = "draft" | "published" | "closed";
+
 export interface ILowCode {
   id: number;
   account_id: number;
@@ -8,9 +9,13 @@ export interface ILowCode {
   components: string[];
   tdk: string;
   desc: string;
+  status: TPageStatus;
+  created_at: Date | string;
+  updated_at: Date | string;
+  published_at: Date | string | null;
+  closed_at: Date | string | null;
 }
 
-// 组件表属性类型
 export interface IComponent {
   id: number;
   account_id: number;
@@ -19,7 +24,6 @@ export interface IComponent {
   options: Record<string, any>;
 }
 
-// 组件数据表属性类型
 export interface IComponentData {
   id: number;
   user: string;

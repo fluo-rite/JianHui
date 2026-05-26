@@ -1,6 +1,8 @@
 import type {
+  GetPageListItemResponse,
   PostQuestionDataRequest,
-  PostReleaseRequest,
+  TPageStatus,
+  UpdatePageRequest,
 } from "@lowcode/share";
 import { objectOmit } from "@lowcode/share";
 import { In } from "typeorm";
@@ -12,7 +14,7 @@ import { HttpError } from "../../utils/http";
 import type { TCurrentUser } from "../../utils/request-user";
 import { sanitizeRichTextHtml } from "./rich-text";
 
-function sanitizeComponentOptions(component: PostReleaseRequest["components"][number]) {
+function sanitizeComponentOptions(component: UpdatePageRequest["components"][number]) {
   if (component.type !== "richText") {
     return component;
   }
@@ -41,88 +43,17 @@ export class LowCodeService {
     private readonly componentDataRepository: Repository<ComponentData>
   ) {}
 
-  async release(body: PostReleaseRequest, user: TCurrentUser) {
-    const { components, ...pageFields } = body;
-    const queryRunner = this.dataSource.createQueryRunner();
-
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const existingPage = await queryRunner.manager.findOneBy(Page, {
-        account_id: user.id,
-      });
-
-      let pageId = existingPage?.id;
-
-      if (existingPage) {
-        await queryRunner.manager.update(Page, existingPage.id, {
-          ...pageFields,
-          components: [],
-        });
-
-        for (const componentId of existingPage.components) {
-          await queryRunner.manager.delete(Component, Number(componentId));
-        }
-
-        await queryRunner.manager.delete(ComponentData, {
-          page_id: existingPage.id,
-        });
-      } else {
-        const insertResult = await queryRunner.manager.insert(Page, {
-          ...pageFields,
-          account_id: user.id,
-          components: [],
-        });
-        pageId = insertResult.identifiers[0].id;
-      }
-
-      const insertedComponentIds: string[] = [];
-      for (const component of components.map(sanitizeComponentOptions)) {
-        const insertResult = await queryRunner.manager.insert(Component, {
-          ...component,
-          page_id: pageId,
-          account_id: user.id,
-        });
-        insertedComponentIds.push(String(insertResult.identifiers[0].id));
-      }
-
-      await queryRunner.manager.update(Page, pageId, {
-        components: insertedComponentIds,
-      });
-
-      await queryRunner.commitTransaction();
-
-      return {
-        msg: "发布成功",
-        data: pageId,
-      };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      const message = error instanceof Error ? error.message : String(error);
-      throw new HttpError(500, `发布失败：${message}`);
-    } finally {
-      await queryRunner.release();
-    }
+  private async getOwnedPage(pageId: number, userId: number) {
+    return this.pageRepository.findOneBy({
+      id: pageId,
+      account_id: userId,
+    });
   }
 
-  async getReleaseData(id?: number | null, user?: TCurrentUser) {
-    let lowCode: Page | null = null;
+  private async getPageComponents(page: Page) {
+    const components: Component[] = [];
 
-    if (user?.id !== undefined) {
-      lowCode = id
-        ? await this.pageRepository.findOneBy({ id, account_id: user.id })
-        : await this.pageRepository.findOneBy({ account_id: user.id });
-    } else if (id) {
-      lowCode = await this.pageRepository.findOneBy({ id });
-    }
-
-    if (!lowCode) {
-      return null;
-    }
-
-    const components = [];
-    for (const componentId of lowCode.components) {
+    for (const componentId of page.components) {
       const component = await this.componentRepository.findOneBy({
         id: Number(componentId),
       });
@@ -131,14 +62,246 @@ export class LowCodeService {
       }
     }
 
+    return components;
+  }
+
+  private async buildPageDetail(page: Page) {
+    const components = await this.getPageComponents(page);
+    const submission_count = await this.componentDataRepository.countBy({
+      page_id: page.id,
+    });
+
     return {
+      ...objectOmit(page, ["components"]),
+      componentIds: page.components,
       components,
-      componentIds: lowCode.components,
-      ...objectOmit(lowCode, ["components"]),
+      submission_count,
     };
   }
 
+  private assertPageStatus(page: Page, expected: TPageStatus, message: string) {
+    if (page.status !== expected) {
+      throw new HttpError(400, message);
+    }
+  }
+
+  async createPage(user: TCurrentUser) {
+    const page = await this.pageRepository.save({
+      account_id: user.id,
+      page_name: "未命名页面",
+      desc: "",
+      tdk: "",
+      components: [],
+      status: "draft",
+      published_at: null,
+      closed_at: null,
+    });
+
+    return {
+      msg: "页面已创建",
+      data: await this.buildPageDetail(page),
+    };
+  }
+
+  async getPages(user: TCurrentUser): Promise<GetPageListItemResponse[]> {
+    const pages = await this.pageRepository.find({
+      where: { account_id: user.id },
+      order: { updated_at: "DESC" },
+    });
+
+    return Promise.all(
+      pages.map(async (page) => {
+        const submission_count = await this.componentDataRepository.countBy({
+          page_id: page.id,
+        });
+
+        return {
+          ...objectOmit(page, ["components"]),
+          submission_count,
+        };
+      })
+    );
+  }
+
+  async getPageDetail(pageId: number, user: TCurrentUser) {
+    const page = await this.getOwnedPage(pageId, user.id);
+    if (!page) {
+      throw new HttpError(404, "页面不存在");
+    }
+
+    return this.buildPageDetail(page);
+  }
+
+  async updatePage(pageId: number, body: UpdatePageRequest, user: TCurrentUser) {
+    const page = await this.getOwnedPage(pageId, user.id);
+    if (!page) {
+      throw new HttpError(404, "页面不存在");
+    }
+    this.assertPageStatus(page, "draft", "仅未发布页面允许编辑");
+
+    const { components, ...pageFields } = body;
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await queryRunner.manager.update(Page, page.id, {
+        ...pageFields,
+        components: [],
+        updated_at: new Date(),
+      });
+
+      for (const componentId of page.components) {
+        await queryRunner.manager.delete(Component, Number(componentId));
+      }
+
+      const insertedComponentIds: string[] = [];
+      for (const component of components.map(sanitizeComponentOptions)) {
+        const insertResult = await queryRunner.manager.insert(Component, {
+          ...component,
+          page_id: page.id,
+          account_id: user.id,
+        });
+        insertedComponentIds.push(String(insertResult.identifiers[0].id));
+      }
+
+      await queryRunner.manager.update(Page, page.id, {
+        components: insertedComponentIds,
+        updated_at: new Date(),
+      });
+
+      await queryRunner.commitTransaction();
+
+      const updatedPage = await this.getOwnedPage(page.id, user.id);
+      if (!updatedPage) {
+        throw new HttpError(404, "页面不存在");
+      }
+
+      return {
+        msg: "页面已保存",
+        data: await this.buildPageDetail(updatedPage),
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      const message = error instanceof Error ? error.message : String(error);
+      throw new HttpError(500, `页面保存失败：${message}`);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async publishPage(pageId: number, user: TCurrentUser) {
+    const page = await this.getOwnedPage(pageId, user.id);
+    if (!page) {
+      throw new HttpError(404, "页面不存在");
+    }
+    this.assertPageStatus(page, "draft", "仅未发布页面允许发布");
+
+    await this.pageRepository.update(page.id, {
+      status: "published",
+      published_at: new Date(),
+      closed_at: null,
+      updated_at: new Date(),
+    });
+
+    return { msg: "页面已发布" };
+  }
+
+  async closePage(pageId: number, user: TCurrentUser) {
+    const page = await this.getOwnedPage(pageId, user.id);
+    if (!page) {
+      throw new HttpError(404, "页面不存在");
+    }
+    this.assertPageStatus(page, "published", "仅已发布页面允许关闭");
+
+    await this.pageRepository.update(page.id, {
+      status: "closed",
+      closed_at: new Date(),
+      updated_at: new Date(),
+    });
+
+    return { msg: "页面已关闭" };
+  }
+
+  async reopenPage(pageId: number, user: TCurrentUser) {
+    const page = await this.getOwnedPage(pageId, user.id);
+    if (!page) {
+      throw new HttpError(404, "页面不存在");
+    }
+    this.assertPageStatus(page, "closed", "仅已关闭页面允许重新打开");
+
+    await this.pageRepository.update(page.id, {
+      status: "published",
+      published_at: new Date(),
+      closed_at: null,
+      updated_at: new Date(),
+    });
+
+    return { msg: "页面已重新打开" };
+  }
+
+  async deletePage(pageId: number, user: TCurrentUser) {
+    const page = await this.getOwnedPage(pageId, user.id);
+    if (!page) {
+      throw new HttpError(404, "页面不存在");
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await queryRunner.manager.delete(ComponentData, { page_id: page.id });
+
+      for (const componentId of page.components) {
+        await queryRunner.manager.delete(Component, Number(componentId));
+      }
+
+      await queryRunner.manager.delete(Page, page.id);
+      await queryRunner.commitTransaction();
+
+      return { msg: "页面已删除" };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      const message = error instanceof Error ? error.message : String(error);
+      throw new HttpError(500, `页面删除失败：${message}`);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async getPublicReleaseData(id?: number | null) {
+    if (!id) {
+      return null;
+    }
+
+    const page = await this.pageRepository.findOneBy({ id });
+    if (!page || page.status === "draft") {
+      return null;
+    }
+
+    if (page.status === "closed") {
+      return {
+        ...objectOmit(page, ["components"]),
+        componentIds: [],
+        components: [],
+        submission_count: await this.componentDataRepository.countBy({
+          page_id: page.id,
+        }),
+      };
+    }
+
+    return this.buildPageDetail(page);
+  }
+
   async isQuestionDataPosted(key: string, pageId: number) {
+    const page = await this.pageRepository.findOneBy({ id: pageId });
+    if (!page || page.status !== "published") {
+      return false;
+    }
+
     const isExist = await this.componentDataRepository.findOneBy({
       user: key,
       page_id: pageId,
@@ -148,6 +311,11 @@ export class LowCodeService {
 
   async postQuestionData(body: PostQuestionDataRequest, key: string) {
     const { page_id, props } = body;
+    const page = await this.pageRepository.findOneBy({ id: page_id });
+    if (!page || page.status !== "published") {
+      throw new HttpError(400, "页面当前不可提交");
+    }
+
     const isExist = await this.componentDataRepository.findOneBy({
       user: key,
       page_id,
@@ -160,23 +328,27 @@ export class LowCodeService {
     return { msg: "提交成功！感谢您的参与！" };
   }
 
-  async getQuestionComponents(user: TCurrentUser) {
+  async getQuestionComponents(user: TCurrentUser, pageId: number) {
+    const page = await this.getOwnedPage(pageId, user.id);
+    if (!page) {
+      throw new HttpError(404, "页面不存在");
+    }
+
     return this.componentRepository.findBy({
       account_id: user.id,
+      page_id: page.id,
       type: In(["input", "textArea", "radio", "checkbox"]),
     });
   }
 
-  async getQuestionData(userId: number) {
-    const lowCodePage = await this.pageRepository.findOneBy({
-      account_id: userId,
-    });
-    if (!lowCodePage) {
-      throw new HttpError(400, "未找到页面，请先发布页面信息");
+  async getQuestionData(userId: number, pageId: number) {
+    const page = await this.getOwnedPage(pageId, userId);
+    if (!page) {
+      throw new HttpError(404, "页面不存在");
     }
 
     const componentDatas = await this.componentDataRepository.findBy({
-      page_id: lowCodePage.id,
+      page_id: page.id,
     });
 
     return Promise.all(
@@ -185,6 +357,7 @@ export class LowCodeService {
           componentData.props.map(async (item) => {
             const component = await this.componentRepository.findOneBy({
               id: item.id,
+              page_id: page.id,
             });
             return {
               result: item,
@@ -199,20 +372,20 @@ export class LowCodeService {
 
   async getQuestionDataByIdRequest({
     id,
+    page_id,
     userId,
   }: {
     id: number;
+    page_id: number;
     userId: number;
   }) {
-    const lowCodePage = await this.pageRepository.findOneBy({
-      account_id: userId,
-    });
-    if (!lowCodePage) {
-      throw new HttpError(400, "未找到页面，请先发布页面信息");
+    const page = await this.getOwnedPage(page_id, userId);
+    if (!page) {
+      throw new HttpError(404, "页面不存在");
     }
 
     const componentDatas = await this.componentDataRepository.findBy({
-      page_id: lowCodePage.id,
+      page_id: page.id,
     });
 
     return Promise.all(
@@ -223,6 +396,7 @@ export class LowCodeService {
             .map(async (item) => {
               const component = await this.componentRepository.findOneBy({
                 id: item.id,
+                page_id: page.id,
               });
               return {
                 value: Array.isArray(item.value)

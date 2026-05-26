@@ -1,62 +1,59 @@
-import {
-  CheckOutlined,
-  FundViewOutlined,
-  PlusOutlined,
-} from "@ant-design/icons";
-import type { IComponent, PostReleaseRequest } from "@lowcode/share";
+import { FundViewOutlined, SaveOutlined } from "@ant-design/icons";
+import type { IComponent, UpdatePageRequest } from "@lowcode/share";
 import { useRequest } from "ahooks";
 import { Button, Space, message } from "antd";
-import { useNavigate } from "react-router-dom";
-import { postRelease } from "~/api/low-code";
+import { useNavigate, useParams } from "react-router-dom";
+import { updatePage as updatePageRequest } from "~/api/low-code";
 import { useStoreComponents, useStorePage } from "~/hooks";
+
+function buildRequestPayload(
+  store: ReturnType<typeof useStorePage>["store"],
+  storeComponents: ReturnType<typeof useStoreComponents>["store"],
+  getComponentById: ReturnType<typeof useStoreComponents>["getComponentById"]
+): UpdatePageRequest {
+  const components = storeComponents.sortableCompConfig
+    .map((comp) => getComponentById(comp))
+    .map((comp) => ({
+      type: comp.type,
+      options: comp.props,
+    })) as IComponent[];
+
+  return {
+    components,
+    desc: store.description,
+    page_name: store.title,
+    tdk: store.tdk,
+  };
+}
 
 export default function Center() {
   const nav = useNavigate();
+  const params = useParams();
+  const pageId = Number(params.pageId);
   const { store } = useStorePage();
-  const {
-    store: storeComponents,
-    getComponentById,
-    storeInLocalStorage,
-  } = useStoreComponents();
+  const { store: storeComponents, getComponentById } = useStoreComponents();
 
-  // 发布接口调用
-  const { run, loading } = useRequest(
-    async (values: PostReleaseRequest) => postRelease(values),
+  const { runAsync, loading } = useRequest(
+    async (values: UpdatePageRequest) => updatePageRequest(pageId, values),
     {
       manual: true,
-      onSuccess: ({ msg, data }) => {
-        // 跳转发布之后的页面
-        nav(`/release?id=${data}`);
-        localStorage.setItem("release_time", String(Date.now()));
-        message.success(msg);
-      },
     }
   );
 
-  // 预览按钮
-  function handleGoPreview() {
-    // 将配置的组件储存在 localStorage
-    storeInLocalStorage();
-    // 跳转预览页面
-    nav("/preview");
+  async function handleSave(showMessage = true) {
+    if (!pageId) {
+      message.warning("页面参数错误");
+      return false;
+    }
+
+    await runAsync(buildRequestPayload(store, storeComponents, getComponentById));
+    return true;
   }
 
-  // 发布按钮
-  function handleGoRelease() {
-    // 将前端的组件数据类型结构转成符合后端接口入参的类型结构
-    const components = storeComponents.sortableCompConfig
-      .map((comp) => getComponentById(comp))
-      .map((comp) => ({
-        type: comp.type,
-        options: comp.props,
-      })) as IComponent[];
-
-    run({
-      components,
-      desc: store.description,
-      page_name: store.title,
-      tdk: store.tdk,
-    });
+  async function handleGoPreview() {
+    const saved = await handleSave(false);
+    if (!saved) return;
+    nav(`/preview/${pageId}`);
   }
 
   return (
@@ -64,16 +61,13 @@ export default function Center() {
       <Button className="flex items-center" onClick={handleGoPreview}>
         预览 <FundViewOutlined />
       </Button>
-      <Button className="flex items-center" onClick={storeInLocalStorage}>
-        存至草稿 <PlusOutlined />
-      </Button>
       <Button
         loading={loading}
         className="flex items-center"
         type="primary"
-        onClick={handleGoRelease}
+        onClick={() => handleSave(true)}
       >
-        发布 <CheckOutlined />
+        保存 <SaveOutlined />
       </Button>
     </Space>
   );

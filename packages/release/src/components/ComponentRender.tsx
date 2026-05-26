@@ -78,7 +78,7 @@ interface ComponentRenderProps {
   data: ReleasePageData;
 }
 
-export default function ComponentRender({ data, id }: ComponentRenderProps) {
+export default function ComponentRender({ data }: ComponentRenderProps) {
   const [isPosted, setIsPosted] = useState(false);
   const [localData, setLocalData] = useImmer(
     JSON.parse(JSON.stringify(data)) as ReleasePageData
@@ -139,26 +139,23 @@ export default function ComponentRender({ data, id }: ComponentRenderProps) {
         return { msg: "请填写完整问卷信息", data: false };
       }
 
-      const response = await fetch(
-        `${API_BASE_URL}/low_code/question_data?id=${data.id}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          method: "POST",
-          body: JSON.stringify({
-            page_id: id,
-            props: localData.components
-              .filter((comp) => usingInputType.includes(comp.type))
-              .map((comp) => {
-                return {
-                  id: comp.id,
-                  value: getQuestionComponentSubmitValue(comp),
-                };
-              }),
-          }),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/low_code/question_data`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify({
+          page_id: data.id,
+          props: localData.components
+            .filter((comp) => usingInputType.includes(comp.type))
+            .map((comp) => {
+              return {
+                id: comp.id,
+                value: getQuestionComponentSubmitValue(comp),
+              };
+            }),
+        }),
+      });
 
       return response.json();
     },

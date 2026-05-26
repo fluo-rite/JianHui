@@ -1,4 +1,4 @@
-import { useLocation, Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useStoreAuth } from "../hooks";
 
 function Home() {
@@ -8,7 +8,7 @@ function Home() {
   const loggedIn = isLogin.get();
 
   if (loggedIn && ["/", "/login_or_register"].includes(location.pathname)) {
-    return <Navigate to="/editor" replace />;
+    return <Navigate to="/pages" replace />;
   }
 
   if (!loggedIn && location.pathname !== "/login_or_register") {
@@ -17,4 +17,5 @@ function Home() {
 
   return <Outlet />;
 }
+
 export default Home;

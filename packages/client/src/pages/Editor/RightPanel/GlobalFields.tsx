@@ -1,23 +1,24 @@
 import { Form, Input } from "antd";
 import type { FC } from "react";
+import { useEffect } from "react";
 
 import { useStorePage } from "~/hooks";
 import type { TStorePage } from "~/store";
 
 const GlobalFields: FC<{ store: TStorePage }> = ({ store }) => {
+  const [form] = Form.useForm<TStorePage>();
   const { updatePage } = useStorePage();
 
-  // 当输入框的值发生改变时同步更新 store 的变量
-  function handleValuesChange(changedValues: Record<keyof TStorePage, string>) {
+  useEffect(() => {
+    form.setFieldsValue(store);
+  }, [form, store]);
+
+  function handleValuesChange(changedValues: Record<string, string>) {
     updatePage(changedValues);
   }
 
   return (
-    <Form
-      layout="vertical"
-      initialValues={store}
-      onValuesChange={handleValuesChange}
-    >
+    <Form form={form} layout="vertical" onValuesChange={handleValuesChange}>
       <Form.Item label="页面标题:" name="title">
         <Input />
       </Form.Item>
@@ -26,7 +27,7 @@ const GlobalFields: FC<{ store: TStorePage }> = ({ store }) => {
         <Input />
       </Form.Item>
 
-      <Form.Item label="页面关键字（以,分割):" name="tdk">
+      <Form.Item label="页面关键词（以 , 分割）:" name="tdk">
         <Input />
       </Form.Item>
     </Form>

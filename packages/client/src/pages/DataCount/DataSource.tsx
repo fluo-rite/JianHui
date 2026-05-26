@@ -7,6 +7,7 @@ import { useStorePage } from "../../hooks/useStorePage";
 
 interface DataSourceProps {
   currentSelected?: IComponent;
+  pageId: number;
 }
 
 interface OptionItem {
@@ -28,7 +29,10 @@ function formatCountAndPercent(item: ChartItem) {
   return `${item.count}人 / ${formatPercent(item.percent)}`;
 }
 
-export default function DataSource({ currentSelected }: DataSourceProps) {
+export default function DataSource({
+  currentSelected,
+  pageId,
+}: DataSourceProps) {
   const [currentData, setCurrentData] = useState<string[][]>([]);
   const [currentOptions, setCurrentOptions] = useState<OptionItem[]>([]);
 
@@ -47,6 +51,7 @@ export default function DataSource({ currentSelected }: DataSourceProps) {
     () =>
       getQuestionDataByTypeRequest({
         id: currentSelected!.id,
+        page_id: pageId,
       }),
     {
       manual: true,
@@ -73,7 +78,7 @@ export default function DataSource({ currentSelected }: DataSourceProps) {
 
   useEffect(() => {
     currentSelected && execGetQuestionData();
-  }, [currentSelected]);
+  }, [currentSelected, execGetQuestionData]);
 
   function generatorTexts() {
     return (
@@ -84,8 +89,7 @@ export default function DataSource({ currentSelected }: DataSourceProps) {
         {currentData.flat().map((item, index) => {
           return (
             <span key={index}>
-              {"填写: "}
-              {item} <br />
+              填写: {item} <br />
             </span>
           );
         })}
@@ -113,7 +117,9 @@ export default function DataSource({ currentSelected }: DataSourceProps) {
     return currentOptions.map((item) => {
       const count = result[item.id] ?? 0;
       const percent =
-        totalSubmissions === 0 ? 0 : Number(((count / totalSubmissions) * 100).toFixed(2));
+        totalSubmissions === 0
+          ? 0
+          : Number(((count / totalSubmissions) * 100).toFixed(2));
 
       return {
         name: item.value,

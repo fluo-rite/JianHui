@@ -1,10 +1,10 @@
 import { createHashRouter } from "react-router-dom";
+import DataCount from "~/pages/dataCount";
 import Editor from "~/pages/editor";
 import Home from "~/pages/index";
-import DataCount from "~/pages/dataCount";
-import Release from "~/pages/release";
-import Preview from "~/pages/preview";
 import LoginOrRegister from "~/pages/loginOrRegister";
+import Pages from "~/pages/pages";
+import Preview from "~/pages/preview";
 
 export const router = createHashRouter([
   {
@@ -16,20 +16,20 @@ export const router = createHashRouter([
         element: <LoginOrRegister />,
       },
       {
-        path: "/editor",
+        path: "/pages",
+        element: <Pages />,
+      },
+      {
+        path: "/editor/:pageId",
         element: <Editor />,
       },
       {
-        path: "/dataCount",
+        path: "/dataCount/:pageId",
         element: <DataCount />,
       },
       {
-        path: "/preview",
+        path: "/preview/:pageId",
         element: <Preview />,
-      },
-      {
-        path: "/release",
-        element: <Release />,
       },
     ],
   },

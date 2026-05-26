@@ -1,6 +1,7 @@
 import type {
+  GetQuestionDataByIdRequest,
   PostQuestionDataRequest,
-  PostReleaseRequest,
+  UpdatePageRequest,
 } from "@lowcode/share";
 import {
   HttpError,
@@ -9,13 +10,13 @@ import {
   ensureString,
 } from "../../utils/http";
 
-function normalizeReleaseOptions(
+function normalizePageOptions(
   type: string,
   options: unknown
 ): Record<string, any> {
   const normalized =
     options && typeof options === "object"
-      ? ({ ...(options as Record<string, any>) } as Record<string, any>)
+      ? { ...(options as Record<string, any>) }
       : {};
 
   if (type === "richText") {
@@ -26,7 +27,11 @@ function normalizeReleaseOptions(
   return normalized;
 }
 
-export function parseReleaseBody(body: unknown): PostReleaseRequest {
+export function parsePageId(value: unknown) {
+  return ensureNumber(value, "page_id 参数错误");
+}
+
+export function parseUpdatePageBody(body: unknown): UpdatePageRequest {
   const values = ensureObject(body, "请求参数错误");
   if (!Array.isArray(values.components)) {
     throw new HttpError(400, "components 必须是数组");
@@ -40,16 +45,11 @@ export function parseReleaseBody(body: unknown): PostReleaseRequest {
       const item = ensureObject(component, "组件配置错误");
       const type = ensureString(item.type, "组件类型不能为空") as any;
       return {
-        id: 0,
         type,
-        options: normalizeReleaseOptions(type, item.options),
+        options: normalizePageOptions(type, item.options),
       };
     }),
   };
-}
-
-export function parsePageId(value: unknown) {
-  return ensureNumber(value, "page_id 参数错误");
 }
 
 export function parseQuestionDataBody(
@@ -76,9 +76,12 @@ export function parseQuestionDataBody(
   };
 }
 
-export function parseComponentIdBody(body: unknown) {
+export function parsePageAndComponentBody(
+  body: unknown
+): GetQuestionDataByIdRequest {
   const values = ensureObject(body, "请求参数错误");
   return {
     id: ensureNumber(values.id, "组件 id 错误"),
+    page_id: ensureNumber(values.page_id, "page_id 参数错误"),
   };
 }

@@ -12,7 +12,7 @@ export function useStoreAuth() {
     const bearerToken = `Bearer ${token}`;
     dispatch(authActions.setToken(bearerToken));
     localStorage.setItem("token", bearerToken);
-    nav("/editor");
+    nav("/pages");
   }
 
   const isLogin = useMemo(

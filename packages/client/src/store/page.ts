@@ -1,15 +1,28 @@
+import type { TPageStatus } from "@lowcode/share";
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 export interface TStorePage {
+  id: number | null;
   title: string;
   description: string;
   tdk: string;
+  status: TPageStatus | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  publishedAt: string | null;
+  closedAt: string | null;
 }
 
 const initialState: TStorePage = {
-  title: "简汇页面",
-  description: "简汇页面详情",
-  tdk: "简汇,低代码,问卷,页面搭建,表单",
+  id: null,
+  title: "未命名页面",
+  description: "",
+  tdk: "",
+  status: null,
+  createdAt: null,
+  updatedAt: null,
+  publishedAt: null,
+  closedAt: null,
 };
 
 const pageSlice = createSlice({
@@ -21,6 +34,12 @@ const pageSlice = createSlice({
     },
     updatePage(state, action: PayloadAction<Partial<TStorePage>>) {
       Object.assign(state, action.payload);
+    },
+    replacePage(_, action: PayloadAction<TStorePage>) {
+      return action.payload;
+    },
+    resetPage() {
+      return initialState;
     },
   },
 });
