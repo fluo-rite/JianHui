@@ -13,14 +13,11 @@
     "@lowcode/share": "workspace:^",
     "ahooks": "^3.7.8",
     "next": "14.0.4",
-    "quill-delta-to-html": "^0.12.1",
     "react": "^18",
     "react-dom": "^18",
-    "sanitize-html": "^2.17.0",
     "use-immer": "^0.9.0"
   },
   "devDependencies": {
-    "@types/sanitize-html": "^2.16.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

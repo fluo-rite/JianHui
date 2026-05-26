@@ -1,6 +1,5 @@
 import type { IRichTextComponentProps } from "@lowcode/share";
 import {
-  EMPTY_RICH_TEXT_CONTENT,
   fillComponentPropsByConfig,
   richTextComponentDefaultConfig,
 } from "@lowcode/share";
@@ -18,20 +17,16 @@ export default function RichTextComponentProps(
   }, [_props]);
   const { updateCurrentComponent } = useStoreComponents();
 
-  // 创建 React Quill 编辑器的实例
   const editorRef = useRef<ReactQuill>(null);
 
   return (
     <div className="flex items-center justify-center">
       <ReactQuill
         theme="snow"
-        value={props.content.value?.raw ?? EMPTY_RICH_TEXT_CONTENT.raw}
+        value={props.content.value ?? ""}
         onChange={(_value, _delta, _source, editor) =>
           updateCurrentComponent({
-            content: {
-              format: "quill-delta",
-              raw: editor.getContents(),
-            },
+            content: editor.getHTML(),
           })
         }
         ref={editorRef}

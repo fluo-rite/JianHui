@@ -1,10 +1,3 @@
-export interface ReleaseRichTextContent {
-  format: "quill-delta";
-  raw: {
-    ops: Array<Record<string, unknown>>;
-  };
-}
-
 export interface ReleaseComponentData {
   id: string;
   type: string;

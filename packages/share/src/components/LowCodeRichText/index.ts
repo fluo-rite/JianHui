@@ -1,4 +1,3 @@
-export * from './type'
-export * from './richText'
+export * from "./type";
 
-export { default as RichTextComponent } from './RichTextComponent'
+export { default as RichTextComponent } from "./RichTextComponent";

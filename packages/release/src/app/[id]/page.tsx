@@ -1,7 +1,5 @@
-import sanitizeHtml from "sanitize-html";
 import ComponentRender from "../../components/ComponentRender";
-import { renderRichTextContentToHtml } from "../../utils/richText";
-import type { ReleasePageData, ReleaseRichTextContent } from "../../types/release";
+import type { ReleasePageData } from "../../types/release";
 
 export const dynamic = "force-dynamic";
 
@@ -29,54 +27,7 @@ async function getData(id: string) {
     throw new Error("404");
   }
 
-  return {
-    ...toJson.data,
-    components: toJson.data.components.map((component) => {
-      if (component.type !== "richText") return component;
-
-      const content = component.options.content as ReleaseRichTextContent;
-      const renderedHtml = sanitizeHtml(renderRichTextContentToHtml(content), {
-        allowedTags: [
-          "p",
-          "br",
-          "span",
-          "strong",
-          "em",
-          "u",
-          "s",
-          "blockquote",
-          "pre",
-          "code",
-          "h1",
-          "h2",
-          "h3",
-          "h4",
-          "ol",
-          "ul",
-          "li",
-        ],
-        allowedAttributes: {
-          "*": ["style"],
-        },
-        allowedStyles: {
-          "*": {
-            color: [/^.*$/],
-            "background-color": [/^.*$/],
-            "text-align": [/^(left|right|center|justify)$/],
-            "font-family": [/^.*$/],
-          },
-        },
-      });
-
-      return {
-        ...component,
-        options: {
-          ...component.options,
-          renderedHtml,
-        },
-      };
-    }),
-  };
+  return toJson.data;
 }
 
 interface PageType {

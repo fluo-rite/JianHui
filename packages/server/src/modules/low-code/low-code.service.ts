@@ -1,22 +1,44 @@
 import type {
   PostQuestionDataRequest,
   PostReleaseRequest,
-} from '@lowcode/share';
-import { objectOmit } from '@lowcode/share';
-import { In } from 'typeorm';
-import type { DataSource, Repository } from 'typeorm';
-import { Component } from '../../entities/component.entity';
-import { ComponentData } from '../../entities/component-data.entity';
-import { Page } from '../../entities/page.entity';
-import { HttpError } from '../../utils/http';
-import type { TCurrentUser } from '../../utils/request-user';
+} from "@lowcode/share";
+import { objectOmit } from "@lowcode/share";
+import { In } from "typeorm";
+import type { DataSource, Repository } from "typeorm";
+import { Component } from "../../entities/component.entity";
+import { ComponentData } from "../../entities/component-data.entity";
+import { Page } from "../../entities/page.entity";
+import { HttpError } from "../../utils/http";
+import type { TCurrentUser } from "../../utils/request-user";
+import { sanitizeRichTextHtml } from "./rich-text";
+
+function sanitizeComponentOptions(component: PostReleaseRequest["components"][number]) {
+  if (component.type !== "richText") {
+    return component;
+  }
+
+  const options =
+    component.options && typeof component.options === "object"
+      ? { ...component.options }
+      : {};
+
+  options.content =
+    typeof options.content === "string"
+      ? sanitizeRichTextHtml(options.content)
+      : "";
+
+  return {
+    ...component,
+    options,
+  };
+}
 
 export class LowCodeService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly pageRepository: Repository<Page>,
     private readonly componentRepository: Repository<Component>,
-    private readonly componentDataRepository: Repository<ComponentData>,
+    private readonly componentDataRepository: Repository<ComponentData>
   ) {}
 
   async release(body: PostReleaseRequest, user: TCurrentUser) {
@@ -56,7 +78,7 @@ export class LowCodeService {
       }
 
       const insertedComponentIds: string[] = [];
-      for (const component of components) {
+      for (const component of components.map(sanitizeComponentOptions)) {
         const insertResult = await queryRunner.manager.insert(Component, {
           ...component,
           page_id: pageId,
@@ -72,13 +94,13 @@ export class LowCodeService {
       await queryRunner.commitTransaction();
 
       return {
-        msg: '发布成功',
+        msg: "发布成功",
         data: pageId,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       const message = error instanceof Error ? error.message : String(error);
-      throw new HttpError(500, `发布失败，${message}`);
+      throw new HttpError(500, `发布失败：${message}`);
     } finally {
       await queryRunner.release();
     }
@@ -112,7 +134,7 @@ export class LowCodeService {
     return {
       components,
       componentIds: lowCode.components,
-      ...objectOmit(lowCode, ['components']),
+      ...objectOmit(lowCode, ["components"]),
     };
   }
 
@@ -135,13 +157,13 @@ export class LowCodeService {
       await this.componentDataRepository.save({ user: key, page_id, props });
     }
 
-    return { msg: '提交成功！感谢您的参与！' };
+    return { msg: "提交成功！感谢您的参与！" };
   }
 
   async getQuestionComponents(user: TCurrentUser) {
     return this.componentRepository.findBy({
       account_id: user.id,
-      type: In(['input', 'textArea', 'radio', 'checkbox']),
+      type: In(["input", "textArea", "radio", "checkbox"]),
     });
   }
 
@@ -150,7 +172,7 @@ export class LowCodeService {
       account_id: userId,
     });
     if (!lowCodePage) {
-      throw new HttpError(400, '未找到页面，请先发布页面信息');
+      throw new HttpError(400, "未找到页面，请先发布页面信息");
     }
 
     const componentDatas = await this.componentDataRepository.findBy({
@@ -169,9 +191,9 @@ export class LowCodeService {
               type: component?.type,
               options: component?.options?.options || {},
             };
-          }),
-        ),
-      ),
+          })
+        )
+      )
     );
   }
 
@@ -186,7 +208,7 @@ export class LowCodeService {
       account_id: userId,
     });
     if (!lowCodePage) {
-      throw new HttpError(400, '未找到页面，请先发布页面信息');
+      throw new HttpError(400, "未找到页面，请先发布页面信息");
     }
 
     const componentDatas = await this.componentDataRepository.findBy({
@@ -210,9 +232,9 @@ export class LowCodeService {
                     : [item.value],
                 options: component?.options?.options || null,
               };
-            }),
+            })
         )
-        .flat(),
+        .flat()
     );
   }
 }

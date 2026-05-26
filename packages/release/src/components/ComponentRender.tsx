@@ -6,7 +6,6 @@ import { Button, message } from "antd";
 import { useState } from "react";
 import { useImmer } from "use-immer";
 import type { ReleaseComponentData, ReleasePageData } from "../types/release";
-import ReleaseRichText from "./ReleaseRichText";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 
@@ -22,13 +21,6 @@ function generateComponent(
   conf: RenderComponentConfig,
   onUpdate: (value: unknown) => void
 ) {
-  if (conf.type === "richText") {
-    const html =
-      typeof conf.props.renderedHtml === "string" ? conf.props.renderedHtml : "";
-
-    return <ReleaseRichText html={html} key={conf.id} />;
-  }
-
   const Component = getComponentByType(conf.type as never);
 
   if (!usingInputType.includes(conf.type)) {
