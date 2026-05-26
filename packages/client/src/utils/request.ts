@@ -1,12 +1,12 @@
 import axios from "axios";
 import type { AxiosRequestConfig } from "axios";
 import { message } from "antd";
-import { store } from "~/store";
+import { authActions, store } from "~/store";
 
 export const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 const request = axios.create({ baseURL: BASE_URL });
 
-// 请求拦截器
+// 璇锋眰鎷︽埅鍣?
 request.interceptors.request.use((config) => {
   const token = store.getState().auth.token;
   if (token) {
@@ -15,7 +15,7 @@ request.interceptors.request.use((config) => {
   return config;
 });
 
-// 响应拦截器
+// 鍝嶅簲鎷︽埅鍣?
 request.interceptors.response.use(
   (response) => {
     const data = response?.data;
@@ -25,10 +25,27 @@ request.interceptors.response.use(
     return response;
   },
   (err) => {
-    const { code, response } = err;
-    if (code === "ERR_BAD_REQUEST") {
-      message.warning(response?.data?.msg ?? "出现未知错误");
+    const response = err?.response;
+    const status = response?.status;
+    const msg = response?.data?.msg ?? "鍑虹幇鏈煡閿欒";
+
+    if (status === 401) {
+      message.warning(msg);
+      store.dispatch(authActions.clearAuth());
+      localStorage.removeItem("token");
+
+      if (window.location.hash !== "#/login_or_register") {
+        window.location.hash = "#/login_or_register";
+      }
+
+      return Promise.reject(err);
     }
+
+    if (typeof status === "number" && status >= 400) {
+      message.warning(msg);
+    }
+
+    return Promise.reject(err);
   }
 );
 
