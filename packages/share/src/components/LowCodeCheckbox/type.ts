@@ -3,12 +3,12 @@ import type { TBasicComponentConfig, TransformedComponentConfig } from "..";
 export interface ICheckboxComponentProps {
   id: string;
   title: string;
-  defaultChecked: string[];
+  value: string[];
   options: {
     id: string;
     value: string;
   }[];
-  onUpdate?: (value: any[]) => void;
+  onUpdate?: (value: string[]) => void;
 }
 
 export type TCheckboxComponentConfig = TBasicComponentConfig<
@@ -19,35 +19,35 @@ export type TCheckboxComponentConfig = TBasicComponentConfig<
 export type TCheckboxComponentConfigResult =
   TransformedComponentConfig<ICheckboxComponentProps>;
 
-export const defaultCheckboxOptions = {
-  id: "",
+export const initialCheckboxOption = {
+  id: "__initial_checkbox_option__",
   value: "选项1",
 };
 
 export const checkboxComponentDefaultConfig: TCheckboxComponentConfigResult = {
-  defaultChecked: {
-    value: [defaultCheckboxOptions.id],
-    defaultValue: [defaultCheckboxOptions.id],
-    isHidden: false,
-  },
   id: {
     value: "",
     defaultValue: "",
-    isHidden: false,
-  },
-  options: {
-    value: [defaultCheckboxOptions],
-    defaultValue: [defaultCheckboxOptions],
-    isHidden: false,
+    isHidden: true,
   },
   title: {
     value: "默认展示的标题",
     defaultValue: "默认展示的标题",
     isHidden: false,
   },
+  options: {
+    value: [initialCheckboxOption],
+    defaultValue: [initialCheckboxOption],
+    isHidden: false,
+  },
+  value: {
+    value: [],
+    defaultValue: [],
+    isHidden: true,
+  },
   onUpdate: {
     value: undefined,
     defaultValue: undefined,
-    isHidden: false,
+    isHidden: true,
   },
 };

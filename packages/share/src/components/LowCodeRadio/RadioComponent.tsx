@@ -15,10 +15,7 @@ export default function RadioComponent(_props: IRadioComponentProps) {
     <div className="space-y-2 p-4">
       <span className="text-lg font-bold">{props.title}:</span>
       <br />
-      <Radio.Group
-        value={props.defaultRadio}
-        onChange={(event) => props.onUpdate?.(event.target.value)}
-      >
+      <Radio.Group value={props.value} onChange={(event) => props.onUpdate?.(event.target.value)}>
         {props.options.map((item) => (
           <Radio value={item.id} key={item.id}>
             {item.value}

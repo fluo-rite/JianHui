@@ -1,7 +1,7 @@
-import type { IRichTextContent } from "@lowcode/share";
 import { QuillDeltaToHtmlConverter } from "quill-delta-to-html";
+import type { ReleaseRichTextContent } from "../types/release";
 
-export function renderRichTextContentToHtml(content: IRichTextContent) {
+export function renderRichTextContentToHtml(content: ReleaseRichTextContent) {
   const ops = Array.isArray(content.raw?.ops) ? content.raw.ops : [];
 
   if (

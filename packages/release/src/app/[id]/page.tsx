@@ -1,7 +1,7 @@
-import ComponentRender from "../../components/ComponentRender";
-import type { GetReleaseDataResponse, IRichTextContent } from "@lowcode/share";
 import sanitizeHtml from "sanitize-html";
+import ComponentRender from "../../components/ComponentRender";
 import { renderRichTextContentToHtml } from "../../utils/richText";
+import type { ReleasePageData, ReleaseRichTextContent } from "../../types/release";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +9,6 @@ const API_INTERNAL_BASE_URL =
   process.env.API_INTERNAL_BASE_URL || "http://127.0.0.1:5000/api";
 
 async function getData(id: string) {
-  // 请求后端接口获取发布页面组件
   const response = await fetch(
     `${API_INTERNAL_BASE_URL}/low_code/release?id=${id}`,
     {
@@ -17,21 +16,25 @@ async function getData(id: string) {
     }
   );
 
-  if (!response.ok) throw new Error("未找到");
+  if (!response.ok) {
+    throw new Error("未找到页面");
+  }
 
   const toJson = (await response.json()) as {
     code: number;
-    data?: GetReleaseDataResponse;
+    data?: ReleasePageData;
   };
 
-  if (!toJson.data) throw new Error("404");
+  if (!toJson.data) {
+    throw new Error("404");
+  }
 
   return {
-    ...toJson.data!,
-    components: toJson.data!.components.map((component) => {
+    ...toJson.data,
+    components: toJson.data.components.map((component) => {
       if (component.type !== "richText") return component;
 
-      const content = component.options.content as IRichTextContent;
+      const content = component.options.content as ReleaseRichTextContent;
       const renderedHtml = sanitizeHtml(renderRichTextContentToHtml(content), {
         allowedTags: [
           "p",
@@ -79,6 +82,7 @@ async function getData(id: string) {
 interface PageType {
   params: { id: string };
 }
+
 export default async function Page({ params }: PageType) {
   const data = await getData(params.id);
 

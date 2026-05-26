@@ -1,15 +1,14 @@
 import type { TBasicComponentConfig, TransformedComponentConfig } from "..";
 
-// 单选框组件属性
 export interface IRadioComponentProps {
   id: string;
   title: string;
-  defaultRadio: string;
+  value: string;
   options: {
     id: string;
     value: string;
   }[];
-  onUpdate?: (value: string[]) => void;
+  onUpdate?: (value: string) => void;
 }
 
 export type TRadioComponentConfig = TBasicComponentConfig<
@@ -20,8 +19,8 @@ export type TRadioComponentConfig = TBasicComponentConfig<
 export type TRadioComponentConfigResult =
   TransformedComponentConfig<IRadioComponentProps>;
 
-export const defaultRadioOptions = {
-  id: "",
+export const initialRadioOption = {
+  id: "__initial_radio_option__",
   value: "选项1",
 };
 
@@ -37,18 +36,18 @@ export const radioComponentDefaultConfig: TRadioComponentConfigResult = {
     isHidden: false,
   },
   options: {
-    value: [defaultRadioOptions],
-    defaultValue: [defaultRadioOptions],
+    value: [initialRadioOption],
+    defaultValue: [initialRadioOption],
     isHidden: false,
   },
-  defaultRadio: {
-    value: defaultRadioOptions.id,
-    defaultValue: defaultRadioOptions.id,
-    isHidden: false,
+  value: {
+    value: "",
+    defaultValue: "",
+    isHidden: true,
   },
   onUpdate: {
     value: undefined,
     defaultValue: undefined,
-    isHidden: false,
+    isHidden: true,
   },
 };

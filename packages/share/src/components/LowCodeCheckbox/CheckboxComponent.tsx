@@ -17,7 +17,7 @@ export default function CheckboxComponent(_props: ICheckboxComponentProps) {
           label: item.value,
           value: item.id,
         }))}
-        value={props.defaultChecked}
+        value={props.value}
         onChange={value => props.onUpdate?.(value)}
       />
     </div>

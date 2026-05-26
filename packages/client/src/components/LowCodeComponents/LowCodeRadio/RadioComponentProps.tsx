@@ -1,10 +1,11 @@
 import { useMemo } from "react";
-import { Form, Input, Select } from "antd";
+import { Form, Input } from "antd";
 import type { IRadioComponentProps } from "@lowcode/share";
 import {
   fillComponentPropsByConfig,
   radioComponentDefaultConfig,
 } from "@lowcode/share";
+import { ulid } from "ulid";
 import { FormContainer, FormContainerWithList, FormPropLabel } from "..";
 
 export default function RadioComponentProps(_props: IRadioComponentProps) {
@@ -12,10 +13,9 @@ export default function RadioComponentProps(_props: IRadioComponentProps) {
     return fillComponentPropsByConfig(_props, radioComponentDefaultConfig);
   }, [_props]);
 
-  // 新增新的选项
   function getListItem() {
     return {
-      id: "",
+      id: ulid(),
       value: `选项${props.options.value.length + 1}`,
     };
   }
@@ -25,19 +25,6 @@ export default function RadioComponentProps(_props: IRadioComponentProps) {
       <FormContainer layout="vertical" config={props}>
         <FormPropLabel prop={props.title} name="title" label="默认展示的标题：">
           <Input />
-        </FormPropLabel>
-
-        <FormPropLabel
-          prop={props.defaultRadio}
-          name="defaultRadio"
-          label="默认选择的选项："
-        >
-          <Select
-            options={props.options.value.map((item) => ({
-              value: item.id,
-              label: item.value,
-            }))}
-          />
         </FormPropLabel>
       </FormContainer>
 
