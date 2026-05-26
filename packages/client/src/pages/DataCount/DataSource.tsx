@@ -69,15 +69,22 @@ export default function DataSource({
               value: item.value,
             }))
           );
-        } else {
-          setCurrentOptions([]);
+          return;
         }
+
+        setCurrentOptions([]);
       },
     }
   );
 
   useEffect(() => {
-    currentSelected && execGetQuestionData();
+    if (!currentSelected) {
+      setCurrentData([]);
+      setCurrentOptions([]);
+      return;
+    }
+
+    execGetQuestionData();
   }, [currentSelected, execGetQuestionData]);
 
   function generatorTexts() {
@@ -134,6 +141,7 @@ export default function DataSource({
       title: {
         text: itemTitle,
         left: "center",
+        top: 12,
       },
       tooltip: {
         trigger: "item",
@@ -141,21 +149,31 @@ export default function DataSource({
           `${data.name}<br/>${formatCountAndPercent(data)}`,
       },
       legend: {
-        orient: "vertical",
-        left: "20%",
+        type: "scroll",
+        bottom: 0,
+        left: "center",
       },
       series: [
         {
           name: "分类人数",
           type: "pie",
-          radius: "50%",
+          center: ["50%", "52%"],
+          radius: ["42%", "62%"],
+          avoidLabelOverlap: true,
           data: chartData.map((item) => ({
             ...item,
             value: item.count,
           })),
           label: {
+            position: "outside",
             formatter: ({ data }: { data: ChartItem }) =>
-              `${data.name}\n${formatCountAndPercent(data)}`,
+              `${data.name}\n${formatPercent(data.percent)}`,
+            lineHeight: 18,
+          },
+          minShowLabelAngle: 8,
+          labelLine: {
+            length: 12,
+            length2: 10,
           },
           emphasis: {
             itemStyle: {
@@ -171,10 +189,10 @@ export default function DataSource({
 
   function getTopOptions() {
     return {
-      width: "500px",
       backgroundColor: "#fff",
       grid: {
         left: "25%",
+        right: "12%",
         containLabel: true,
       },
       tooltip: {
@@ -274,9 +292,19 @@ export default function DataSource({
   return (
     <>
       {isRadio ? (
-        <ReactECharts option={getPieOptions()} />
+        <ReactECharts
+          key={`${currentSelected?.id ?? "empty"}-radio`}
+          option={getPieOptions()}
+          notMerge={true}
+          style={{ height: 420 }}
+        />
       ) : isCheckbox ? (
-        <ReactECharts option={getTopOptions()} />
+        <ReactECharts
+          key={`${currentSelected?.id ?? "empty"}-checkbox`}
+          option={getTopOptions()}
+          notMerge={true}
+          style={{ height: Math.max(chartData.length * 56, 260) }}
+        />
       ) : (
         generatorTexts()
       )}
