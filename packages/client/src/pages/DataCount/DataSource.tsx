@@ -4,25 +4,45 @@ import { useEffect, useMemo, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import { getQuestionDataByTypeRequest } from "~/api/low-code";
 import { useStorePage } from "../../hooks/useStorePage";
+
 interface DataSourceProps {
   currentSelected?: IComponent;
 }
 
+interface OptionItem {
+  id: string;
+  value: string;
+}
+
+interface ChartItem {
+  name: string;
+  count: number;
+  percent: number;
+}
+
+function formatPercent(percent: number) {
+  return Number.isInteger(percent) ? `${percent}%` : `${percent.toFixed(2)}%`;
+}
+
+function formatCountAndPercent(item: ChartItem) {
+  return `${item.count}人 / ${formatPercent(item.percent)}`;
+}
+
 export default function DataSource({ currentSelected }: DataSourceProps) {
   const [currentData, setCurrentData] = useState<string[][]>([]);
-  const [currentOptions, setCurrentOptions] = useState<
-    { id: string; value: string }[]
-  >([]);
+  const [currentOptions, setCurrentOptions] = useState<OptionItem[]>([]);
 
   const { store } = useStorePage();
 
-  // 用于判断点击的组件是否为输入类型组件
-  const isMore = useMemo(
-    () => ["radio", "checkbox"].includes(currentSelected?.type ?? ""),
+  const isRadio = useMemo(
+    () => currentSelected?.type === "radio",
+    [currentSelected]
+  );
+  const isCheckbox = useMemo(
+    () => currentSelected?.type === "checkbox",
     [currentSelected]
   );
 
-  // 请求点击的某个组件信息
   const { run: execGetQuestionData } = useRequest(
     () =>
       getQuestionDataByTypeRequest({
@@ -32,23 +52,29 @@ export default function DataSource({ currentSelected }: DataSourceProps) {
       manual: true,
       onSuccess: ({ data }) => {
         setCurrentData(data.map((item: any) => item.value));
-        isMore &&
+
+        if (
+          ["radio", "checkbox"].includes(currentSelected?.type ?? "") &&
+          data.length > 0 &&
+          Array.isArray(data[0]?.options)
+        ) {
           setCurrentOptions(
             data[0].options.map((item: any) => ({
               id: item.id,
               value: item.value,
             }))
           );
+        } else {
+          setCurrentOptions([]);
+        }
       },
     }
   );
 
-  // 当查看不同问卷组件展示不同组件信息
   useEffect(() => {
     currentSelected && execGetQuestionData();
   }, [currentSelected]);
 
-  // 生成用户输入类型问卷组件信息
   function generatorTexts() {
     return (
       <div className="p-10">
@@ -67,63 +93,64 @@ export default function DataSource({ currentSelected }: DataSourceProps) {
     );
   }
 
-  // 不同非输入类型组件展示的标题
   const itemTitle = useMemo(
     () => currentSelected?.options.title ?? "默认展示的标题",
     [currentSelected]
   );
 
-  // 将currentData数组中的每个元素的每个属性作为key，统计出现次数
+  const totalSubmissions = useMemo(() => currentData.length, [currentData]);
+
   const result = useMemo(() => {
-    const a = currentData.reduce((acc, prev) => {
+    return currentData.reduce((acc, prev) => {
       prev.forEach((id) => {
-        acc[id ?? ""] = (acc?.[id] ?? 0) + 1;
+        acc[id ?? ""] = (acc[id ?? ""] ?? 0) + 1;
       });
       return acc;
-    }, {} as any);
-    return a;
+    }, {} as Record<string, number>);
   }, [currentData]);
 
-  // 处理成图表需要的数据格式
-  const data = useMemo(() => {
-    // 根据currentOptions生成一个新的数组，每个元素包含name和value属性
+  const chartData = useMemo<ChartItem[]>(() => {
     return currentOptions.map((item) => {
+      const count = result[item.id] ?? 0;
+      const percent =
+        totalSubmissions === 0 ? 0 : Number(((count / totalSubmissions) * 100).toFixed(2));
+
       return {
         name: item.value,
-        value: result[item.id] ?? 0,
+        count,
+        percent,
       };
     });
-  }, [currentOptions]);
+  }, [currentOptions, result, totalSubmissions]);
 
-  console.log("result:", result);
-  console.log("currentData:", currentData);
-  console.log("data:", data);
-
-  // 饼状图配置
   function getPieOptions() {
     return {
-      // 标题
       title: {
         text: itemTitle,
         left: "center",
       },
-      // 设置提示框
       tooltip: {
         trigger: "item",
+        formatter: ({ data }: { data: ChartItem }) =>
+          `${data.name}<br/>${formatCountAndPercent(data)}`,
       },
-      // 设置图例的显示方向
       legend: {
         orient: "vertical",
         left: "20%",
       },
-      // 设置饼状图的详细配置
       series: [
         {
-          name: "分类个数",
+          name: "分类人数",
           type: "pie",
           radius: "50%",
-          data,
-          // 设置鼠标悬停时的样式
+          data: chartData.map((item) => ({
+            ...item,
+            value: item.count,
+          })),
+          label: {
+            formatter: ({ data }: { data: ChartItem }) =>
+              `${data.name}\n${formatCountAndPercent(data)}`,
+          },
           emphasis: {
             itemStyle: {
               shadowBlur: 10,
@@ -136,26 +163,26 @@ export default function DataSource({ currentSelected }: DataSourceProps) {
     };
   }
 
-  // 横向柱状图配置
   function getTopOptions() {
     return {
-      // 设置图表宽度为 500 像素
       width: "500px",
       backgroundColor: "#fff",
       grid: {
         left: "25%",
-        containLabel: true, // 确保网格内的标签不会被剪裁
+        containLabel: true,
       },
       tooltip: {
         trigger: "item",
-        // 定义坐标轴指示器的配置对象
         axisPointer: {
           type: "none",
         },
+        formatter: ({ data }: { data: ChartItem }) =>
+          `${data.name}<br/>${formatCountAndPercent(data)}`,
       },
       xAxis: {
         show: false,
         type: "value",
+        max: 100,
       },
       yAxis: [
         {
@@ -185,7 +212,7 @@ export default function DataSource({ currentSelected }: DataSourceProps) {
           axisLine: {
             show: false,
           },
-          data: data.map((item) => item.name),
+          data: chartData.map((item) => item.name),
         },
         {
           type: "category",
@@ -198,14 +225,15 @@ export default function DataSource({ currentSelected }: DataSourceProps) {
               color: "#3196fa",
               fontSize: "12",
             },
-            formatter: "{value}%",
+            formatter: (_: string, index: number) =>
+              formatCountAndPercent(chartData[index]),
           },
-          data: data.map((item) => item.value),
+          data: chartData.map((item) => item.name),
         },
       ],
       series: [
         {
-          name: "值",
+          name: "百分比",
           type: "bar",
           zlevel: 1,
           itemStyle: {
@@ -215,14 +243,17 @@ export default function DataSource({ currentSelected }: DataSourceProps) {
             },
           },
           barWidth: 20,
-          data,
+          data: chartData.map((item) => ({
+            value: item.percent,
+            ...item,
+          })),
         },
         {
           name: "背景",
           type: "bar",
           barWidth: 20,
           barGap: "-100%",
-          data: Array.from({ length: data.length }).fill(100),
+          data: Array.from({ length: chartData.length }).fill(100),
           itemStyle: {
             normal: {
               color: "#ededed",
@@ -233,13 +264,13 @@ export default function DataSource({ currentSelected }: DataSourceProps) {
       ],
     };
   }
+
   return (
     <>
-      {isMore ? (
-        <div>
-          <ReactECharts option={getPieOptions()} />
-          <ReactECharts option={getTopOptions()} />
-        </div>
+      {isRadio ? (
+        <ReactECharts option={getPieOptions()} />
+      ) : isCheckbox ? (
+        <ReactECharts option={getTopOptions()} />
       ) : (
         generatorTexts()
       )}

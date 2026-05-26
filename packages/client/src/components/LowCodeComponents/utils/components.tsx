@@ -397,7 +397,7 @@ export const UploadComponent: FC<UploadComponentProps> = ({
               type="file"
               ref={uploadRef}
               accept={type === "video" ? "video/*" : "image/*"}
-              onInput={handleUploadChange}
+              onChange={handleUploadChange}
             />
           </div>
 
@@ -449,7 +449,7 @@ export const UploadEditOrChooiseInput: FC<UploadEditOrChooiseInputProps> = ({
   // 选择某个已经上传的资源
   function handleChooise(url: string) {
     setVisible(false);
-    // 选择列表形式的资源上传组件时修改 stroe 的方法
+    // 选择列表形式的资源上传组件时修改 store 的方法
     if (listOptions !== undefined) {
       if (
         (getCurrentComponentConfig.get()?.props as any)?.[
@@ -475,7 +475,7 @@ export const UploadEditOrChooiseInput: FC<UploadEditOrChooiseInputProps> = ({
         value: url,
       });
     } else {
-      // 选择非列表形式的资源上传组件时修改 stroe 的方法
+      // 选择非列表形式的资源上传组件时修改 store 的方法
       updateCurrentComponent({ [propName]: url });
     }
   }
