@@ -28,7 +28,7 @@ export default function RichTextComponent(_props: IRichTextComponentProps) {
   if (!html)
     return (
       <div id="placeholder" className="w-full h-20">
-        璇峰湪瀵屾枃鏈緭鍏ュ唴瀹?
+        请在富文本输入内容
       </div>
     );
 
