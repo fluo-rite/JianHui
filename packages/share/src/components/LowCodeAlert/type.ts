@@ -1,31 +1,24 @@
-import type { TBasicComponentConfig, TransformedComponentConfig } from "..";
+import type { AlertComponentOptions } from "./schema";
+import type { TransformedComponentConfig } from "..";
 
-export interface IAlertComponentProps {
-  title: string;
-  showIcon: boolean;
-  showClose: boolean;
-  type: "success" | "info" | "warning" | "error";
-}
+export type IAlertComponentProps = AlertComponentOptions;
 
-// 转换成通用组件类型
 export type TAlertComponentConfig = {
   type: "alert";
   id: string;
-  props: {
-    title: string;
-    description: string;
-    showIcon: boolean;
-    showClose: boolean;
-    isBanner: boolean;
-    type: "success" | "info" | "warning" | "error";
-  };
+  props: IAlertComponentProps;
 };
 
 export type TAlertComponentConfigResult =
   TransformedComponentConfig<IAlertComponentProps>;
 
-export const alertComponentDefaultConfig = {
+export const alertComponentDefaultConfig: TAlertComponentConfigResult = {
   title: {
+    defaultValue: "提示信息",
+    value: "提示信息",
+    isHidden: false,
+  },
+  description: {
     defaultValue: "",
     value: "",
     isHidden: false,
@@ -38,6 +31,11 @@ export const alertComponentDefaultConfig = {
   showClose: {
     defaultValue: true,
     value: true,
+    isHidden: false,
+  },
+  isBanner: {
+    defaultValue: false,
+    value: false,
     isHidden: false,
   },
   type: {

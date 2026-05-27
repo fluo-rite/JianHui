@@ -4,24 +4,38 @@ import type {
   UpdatePageRequest,
 } from "@lowcode/share";
 import {
+  getComponentOptionsValidationIssues,
+  isSupportedComponentType,
+  normalizeComponentPropsByType,
+} from "@lowcode/share";
+import {
   HttpError,
   ensureNumber,
   ensureObject,
   ensureString,
 } from "../../utils/http";
 
-function normalizePageOptions(
-  type: string,
-  options: unknown
-): Record<string, any> {
-  const normalized =
-    options && typeof options === "object"
-      ? { ...(options as Record<string, any>) }
-      : {};
+function validatePageOptions(
+  type: UpdatePageRequest["components"][number]["type"],
+  options: unknown,
+  index: number
+) {
+  const normalized = normalizeComponentPropsByType(
+    type,
+    options as Record<string, any>
+  );
+  const validationIssues = getComponentOptionsValidationIssues(
+    type,
+    normalized
+  );
 
-  if (type === "richText") {
-    normalized.content =
-      typeof normalized.content === "string" ? normalized.content : "";
+  if (validationIssues.length > 0) {
+    const firstIssue = validationIssues[0];
+    const path = firstIssue.path ? `.${firstIssue.path}` : "";
+    throw new HttpError(
+      400,
+      `components[${index}].options${path} ${firstIssue.message}`.trim()
+    );
   }
 
   return normalized;
@@ -41,14 +55,18 @@ export function parseUpdatePageBody(body: unknown): UpdatePageRequest {
     page_name: ensureString(values.page_name, "页面名称不能为空"),
     desc: typeof values.desc === "string" ? values.desc : "",
     tdk: typeof values.tdk === "string" ? values.tdk : "",
-    components: values.components.map((component) => {
+    components: values.components.map((component, index) => {
       const item = ensureObject(component, "组件配置错误");
-      const type = ensureString(item.type, "组件类型不能为空") as any;
+      const type = ensureString(item.type, "组件类型不能为空");
+      if (!isSupportedComponentType(type)) {
+        throw new HttpError(400, `components[${index}].type 不支持的组件类型`);
+      }
+
       return {
         type,
-        options: normalizePageOptions(type, item.options),
-      };
-    }),
+        options: validatePageOptions(type, item.options, index),
+      } as UpdatePageRequest["components"][number];
+    }) as UpdatePageRequest["components"],
   };
 }
 

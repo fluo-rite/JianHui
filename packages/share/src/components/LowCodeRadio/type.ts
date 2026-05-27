@@ -1,15 +1,9 @@
+import type { RadioComponentOptions } from "./schema";
 import type { TBasicComponentConfig, TransformedComponentConfig } from "..";
 
-export interface IRadioComponentProps {
-  id: string;
-  title: string;
-  value: string;
-  options: {
-    id: string;
-    value: string;
-  }[];
+export type IRadioComponentProps = RadioComponentOptions & {
   onUpdate?: (value: string) => void;
-}
+};
 
 export type TRadioComponentConfig = TBasicComponentConfig<
   "radio",
@@ -31,8 +25,8 @@ export const radioComponentDefaultConfig: TRadioComponentConfigResult = {
     isHidden: true,
   },
   title: {
-    value: "默认展示的标题",
-    defaultValue: "默认展示的标题",
+    value: "默认显示的标题",
+    defaultValue: "默认显示的标题",
     isHidden: false,
   },
   options: {

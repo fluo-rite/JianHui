@@ -20,7 +20,7 @@ function sanitizeComponentOptions(
     return component;
   }
 
-  const options =
+  const options: Record<string, any> =
     component.options && typeof component.options === 'object'
       ? { ...component.options }
       : {};
@@ -185,7 +185,10 @@ export class LowCodeService {
       });
 
       if (nextComponents.length > 0) {
-        await queryRunner.manager.insert(Component, nextComponents);
+        await queryRunner.manager.insert(
+          Component,
+          nextComponents as Array<Partial<Component>>,
+        );
       }
 
       await queryRunner.commitTransaction();

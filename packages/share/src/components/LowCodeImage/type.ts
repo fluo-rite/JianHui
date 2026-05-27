@@ -1,37 +1,18 @@
+import type { ImageComponentOptions } from "./schema";
 import type { TBasicComponentConfig, TransformedComponentConfig } from "..";
 
-// 图片组件的属性
-export interface IImageComponentProps {
-  id: string;
-  url: string;
-  name: string;
-  height: string | number;
-  handleClicked: "open-url" | "none";
-  fit:
-    | "contain"
-    | "cover"
-    | "fill"
-    | "none"
-    | "scale-down"
-    | "initial"
-    | "revert"
-    | "unset";
-  link?: string;
-}
+export type IImageComponentProps = ImageComponentOptions;
 
-// 转换成通用组件类型
 export type TImageComponentConfig = TBasicComponentConfig<
   "image",
   IImageComponentProps
 >;
 
-// 剔除可选属性
 export type TImageComponentConfigResult =
   TransformedComponentConfig<IImageComponentProps>;
 
-// 图片属性的默认值
 export const defaultImageInfo: IImageComponentProps = {
-  id: "",
+  id: "__default_image__",
   url: "https://placehold.co/380x200/f5f5f5/000000/png?text=JianHui+Image",
   fit: "cover",
   height: 200,
@@ -40,7 +21,6 @@ export const defaultImageInfo: IImageComponentProps = {
   link: "https://example.com",
 };
 
-// 图片表单配置属性的值
 export const imageComponentDefaultConfig: TImageComponentConfigResult = {
   id: {
     value: "",
@@ -74,7 +54,8 @@ export const imageComponentDefaultConfig: TImageComponentConfigResult = {
   },
   url: {
     value: "https://placehold.co/380x200/f5f5f5/000000/png?text=JianHui+Image",
-    defaultValue: "/380x200/f5f5f5/000000/png?text=JianHui+Image",
+    defaultValue:
+      "https://placehold.co/380x200/f5f5f5/000000/png?text=JianHui+Image",
     isHidden: false,
   },
 };

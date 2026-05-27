@@ -1,3 +1,4 @@
+import type { UpdatePageComponent } from "../../schema";
 import type { IComponent, IComponentData, ILowCode } from "..";
 
 export type UpdatePageRequest = Omit<
@@ -10,7 +11,7 @@ export type UpdatePageRequest = Omit<
   | "published_at"
   | "closed_at"
 > & {
-  components: Omit<IComponent, "id" | "page_id" | "sort_index">[];
+  components: UpdatePageComponent[];
 };
 
 export type PostQuestionDataRequest = Pick<IComponentData, "page_id" | "props">;

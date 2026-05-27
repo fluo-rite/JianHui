@@ -1,10 +1,11 @@
 import { FundViewOutlined, SaveOutlined } from "@ant-design/icons";
-import type { UpdatePageRequest } from "@lowcode/share";
+import { normalizeComponentPropsByType, type UpdatePageRequest } from "@lowcode/share";
 import { useRequest } from "ahooks";
 import { Button, Space, message } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
 import { updatePage as updatePageRequest } from "~/api/low-code";
 import { useStoreComponents, useStorePage } from "~/hooks";
+import { validatePageComponentOptionsBeforeSave } from "~/utils/component-validation";
 
 function buildRequestPayload(
   store: ReturnType<typeof useStorePage>["store"],
@@ -15,7 +16,7 @@ function buildRequestPayload(
     .map((comp) => getComponentById(comp))
     .map((comp) => ({
       type: comp.type,
-      options: comp.props,
+      options: normalizeComponentPropsByType(comp.type, comp.props),
     }));
 
   return {
@@ -46,6 +47,19 @@ export default function Center() {
       return false;
     }
 
+    const failure = validatePageComponentOptionsBeforeSave(
+      storeComponents,
+      getComponentById
+    );
+    if (failure) {
+      message.warning(
+        failure.fieldLabel
+          ? `第 ${failure.componentIndex + 1} 个组件的${failure.fieldLabel}配置有误：${failure.message}`
+          : `第 ${failure.componentIndex + 1} 个组件配置有误：${failure.message}`
+      );
+      return false;
+    }
+
     await runAsync(buildRequestPayload(store, storeComponents, getComponentById));
     return true;
   }
@@ -65,7 +79,7 @@ export default function Center() {
         loading={loading}
         className="flex items-center"
         type="primary"
-        onClick={() => handleSave(true)}
+        onClick={handleSave}
       >
         保存 <SaveOutlined />
       </Button>

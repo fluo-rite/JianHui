@@ -19,6 +19,7 @@
     "build": "unbuild"
   },
   "dependencies": {
+    "@sinclair/typebox": "^0.34.38",
     "unbuild": "^2.0.0"
   }
 }

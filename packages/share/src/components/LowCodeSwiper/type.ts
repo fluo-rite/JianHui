@@ -1,35 +1,24 @@
 import {
-  type IImageComponentProps,
+  defaultImageInfo,
   type TBasicComponentConfig,
   type TransformedComponentConfig,
-  defaultImageInfo,
 } from "..";
+import type { SwiperComponentOptions } from "./schema";
 
-// 轮播图组件属性
-export interface ISwiperComponentProps {
-  id: string;
-  interval: number;
-  autoPlay: boolean;
-  images: IImageComponentProps[];
-  showIndicators: boolean;
-  dotPosition: "bottom" | "top" | "left" | "right";
-}
+export type ISwiperComponentProps = SwiperComponentOptions;
 
-// 转换成通用组件类型
 export type TSwiperComponentConfig = TBasicComponentConfig<
   "swiper",
   ISwiperComponentProps
 >;
 
-// 剔除可选属性
 export type TSwiperComponentConfigResult =
   TransformedComponentConfig<ISwiperComponentProps>;
 
-// 图片表单配置属性的值
 export const swiperComponentDefaultConfig: TSwiperComponentConfigResult = {
   id: {
-    value: "",
-    defaultValue: "",
+    value: "__default_swiper__",
+    defaultValue: "__default_swiper__",
     isHidden: true,
   },
   autoPlay: {

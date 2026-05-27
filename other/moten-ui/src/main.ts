@@ -1,0 +1,73 @@
+import "./assets/styles/index.scss";
+
+import MoImage from "@/components/image";
+import MoColumn from "@/components/column";
+import MoVideo from "@/components/video";
+import MoTextarea from "@/components/textarea";
+import MoSlide from "@/components/carousel";
+import MoBlank from "@/components/blank";
+import MoRow from "@/components/row";
+import MoCanvas from "@/components/canvas";
+
+import imageSchema from "@/components/image/schema";
+import columnSchema from "@/components/column/schema";
+import videoSchema from "@/components/video/schema";
+import textareaSchema from "@/components/textarea/schema";
+import slideSchema from "@/components/carousel/schema";
+import blankSchema from "@/components/blank/schema";
+import rowSchema from "@/components/row/schema";
+import canvasSchema from "@/components/canvas/schema";
+
+import { schemaAllViewport as _schemaAllViewport } from "./utils/components";
+import { COMPONENT_PREFIX as _COMPONENT_PREFIX } from "./config";
+import type { App } from "vue";
+
+const components = [
+  MoImage,
+  MoColumn,
+  MoVideo,
+  MoTextarea,
+  MoSlide,
+  MoBlank,
+  MoRow,
+  MoCanvas,
+];
+
+const install = (
+  app: App,
+  options: {
+    platform: "editor" | "user";
+  }
+) => {
+  components.forEach((component) => {
+    const { name } = component;
+    if (name) app.component(name, component);
+  });
+  app.provide("platform", options.platform);
+};
+
+export const schema = {
+  image: imageSchema,
+  column: columnSchema,
+  video: videoSchema,
+  textarea: textareaSchema,
+  slide: slideSchema,
+  blank: blankSchema,
+  row: rowSchema,
+  canvas: canvasSchema,
+};
+
+export const schemaAllViewport = _schemaAllViewport;
+export const COMPONENT_PREFIX = _COMPONENT_PREFIX;
+
+export default {
+  install,
+  MoImage,
+  MoColumn,
+  MoVideo,
+  MoTextarea,
+  MoSlide,
+  MoBlank,
+  MoRow,
+  MoCanvas,
+};

@@ -1,13 +1,13 @@
 import { Input, Select, Switch } from "antd";
 import { useMemo } from "react";
 import {
-  type ICardComponentProps,
+  type IAlertComponentProps,
   alertComponentDefaultConfig,
   fillComponentPropsByConfig,
 } from "@lowcode/share";
 import { FormContainer, FormPropLabel } from "..";
 
-export default function CardComponentProps(_props: ICardComponentProps) {
+export default function AlertComponentProps(_props: IAlertComponentProps) {
   const props = useMemo(() => {
     return fillComponentPropsByConfig(_props, alertComponentDefaultConfig);
   }, [_props]);
@@ -54,6 +54,17 @@ export default function CardComponentProps(_props: ICardComponentProps) {
         valuePropName="checked"
       >
         <Switch />
+      </FormPropLabel>
+      <FormPropLabel
+        prop={props.isBanner}
+        name="isBanner"
+        label="鏄惁涓篵anner:"
+        valuePropName="checked"
+      >
+        <Switch />
+      </FormPropLabel>
+      <FormPropLabel prop={props.description} name="description" label="鎻忚堪:">
+        <Input.TextArea rows={3} />
       </FormPropLabel>
     </FormContainer>
   );

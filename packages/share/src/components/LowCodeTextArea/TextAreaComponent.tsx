@@ -1,13 +1,14 @@
 import React, { useMemo } from 'react'
 import { Input } from 'antd'
-import { getDefaultValueByConfig, inputComponentDefaultConfig } from '..'
+import { getDefaultValueByConfig } from '..'
+import { textAreaComponentDefaultConfig } from '.'
 import { type ITextAreaComponentProps } from '.'
 
 const { TextArea } = Input
 
 export default function TextAreaComponent(_props: ITextAreaComponentProps) {
   const props = useMemo(() => {
-    return { ...getDefaultValueByConfig(inputComponentDefaultConfig), ..._props }
+    return { ...getDefaultValueByConfig(textAreaComponentDefaultConfig), ..._props }
   }, [_props])
 
   return (

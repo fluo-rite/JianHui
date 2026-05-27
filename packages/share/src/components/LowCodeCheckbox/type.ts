@@ -1,15 +1,9 @@
+import type { CheckboxComponentOptions } from "./schema";
 import type { TBasicComponentConfig, TransformedComponentConfig } from "..";
 
-export interface ICheckboxComponentProps {
-  id: string;
-  title: string;
-  value: string[];
-  options: {
-    id: string;
-    value: string;
-  }[];
+export type ICheckboxComponentProps = CheckboxComponentOptions & {
   onUpdate?: (value: string[]) => void;
-}
+};
 
 export type TCheckboxComponentConfig = TBasicComponentConfig<
   "checkbox",
@@ -31,8 +25,8 @@ export const checkboxComponentDefaultConfig: TCheckboxComponentConfigResult = {
     isHidden: true,
   },
   title: {
-    value: "默认展示的标题",
-    defaultValue: "默认展示的标题",
+    value: "默认显示的标题",
+    defaultValue: "默认显示的标题",
     isHidden: false,
   },
   options: {

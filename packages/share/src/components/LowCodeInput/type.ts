@@ -1,11 +1,9 @@
+import type { InputComponentOptions } from "./schema";
 import type { TBasicComponentConfig, TransformedComponentConfig } from "..";
 
-export interface IInputComponentProps {
-  title: string;
-  text: string;
-  placeholder: string;
+export type IInputComponentProps = InputComponentOptions & {
   onUpdate?: (value: string) => void;
-}
+};
 
 export type TInputComponentConfig = TBasicComponentConfig<
   "input",
@@ -17,18 +15,18 @@ export type TInputComponentConfigResult =
 
 export const inputComponentDefaultConfig: TInputComponentConfigResult = {
   placeholder: {
-    value: "请输入内容……",
-    defaultValue: "请输入内容……",
+    value: "请输入内容…",
+    defaultValue: "请输入内容…",
     isHidden: false,
   },
   text: {
     value: "",
     defaultValue: "",
-    isHidden: false,
+    isHidden: true,
   },
   title: {
-    value: "请输入标题……",
-    defaultValue: "请输入标题……",
+    value: "请输入标题…",
+    defaultValue: "请输入标题…",
     isHidden: false,
   },
   onUpdate: {

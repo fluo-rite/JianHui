@@ -1,5 +1,21 @@
 import { calcValueByString, componentList } from "..";
+import type { SupportedComponentType } from "../schema";
 import type { TBasicComponentConfig, TransformedComponentConfig } from ".";
+import { alertComponentDefaultConfig } from "./LowCodeAlert";
+import { cardComponentDefaultConfig } from "./LowCodeCard";
+import { checkboxComponentDefaultConfig } from "./LowCodeCheckbox";
+import { emptyComponentDefaultConfig } from "./LowCodeEmpty";
+import { imageComponentDefaultConfig } from "./LowCodeImage";
+import { inputComponentDefaultConfig } from "./LowCodeInput";
+import { listComponentDefaultConfig } from "./LowCodeList";
+import { qrcodeComponentDefaultConfig } from "./LowCodeQrcode";
+import { radioComponentDefaultConfig } from "./LowCodeRadio";
+import { richTextComponentDefaultConfig } from "./LowCodeRichText";
+import { splitComponentDefaultConfig } from "./LowCodeSplit";
+import { swiperComponentDefaultConfig } from "./LowCodeSwiper";
+import { textComponentDefaultConfig } from "./LowCodeText";
+import { textAreaComponentDefaultConfig } from "./LowCodeTextArea";
+import { videoComponentDefaultConfig } from "./LowCodeVideo";
 
 // 获取组件的入口
 export function getComponentByType(type: TBasicComponentConfig["type"]) {
@@ -41,4 +57,50 @@ export function fillComponentPropsByConfig<
     };
   }
   return result;
+}
+
+function omitUndefinedProperties<T extends Record<string, any>>(value: T): T {
+  return Object.entries(value).reduce((acc, [key, item]) => {
+    if (item !== undefined) {
+      acc[key] = item;
+    }
+    return acc;
+  }, {} as T);
+}
+
+const componentDefaultConfigMap: Record<
+  SupportedComponentType,
+  TransformedComponentConfig<Record<string, any>>
+> = {
+  video: videoComponentDefaultConfig,
+  swiper: swiperComponentDefaultConfig,
+  qrcode: qrcodeComponentDefaultConfig,
+  card: cardComponentDefaultConfig,
+  list: listComponentDefaultConfig,
+  image: imageComponentDefaultConfig,
+  titleText: textComponentDefaultConfig,
+  split: splitComponentDefaultConfig,
+  richText: richTextComponentDefaultConfig,
+  input: inputComponentDefaultConfig,
+  textArea: textAreaComponentDefaultConfig,
+  radio: radioComponentDefaultConfig,
+  checkbox: checkboxComponentDefaultConfig,
+  empty: emptyComponentDefaultConfig,
+  alert: alertComponentDefaultConfig,
+};
+
+export function getComponentDefaultPropsByType(type: SupportedComponentType) {
+  return omitUndefinedProperties(
+    getDefaultValueByConfig(componentDefaultConfigMap[type]),
+  );
+}
+
+export function normalizeComponentPropsByType<T extends SupportedComponentType>(
+  type: T,
+  props?: Record<string, any> | null,
+) {
+  return {
+    ...getComponentDefaultPropsByType(type),
+    ...omitUndefinedProperties((props ?? {}) as Record<string, any>),
+  };
 }

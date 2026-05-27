@@ -2,7 +2,7 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { arrayMove } from "@dnd-kit/sortable";
 import { ulid } from "ulid";
 import type { TComponentPropsUnion, TComponentTypes } from "@lowcode/share";
-import { calcValueByString } from "@lowcode/share";
+import { calcValueByString, getComponentDefaultPropsByType } from "@lowcode/share";
 
 export interface TStoreComponents {
   compConfigs: Record<string, TComponentPropsUnion>;
@@ -75,7 +75,7 @@ const componentsSlice = createSlice({
         const comp: TComponentPropsUnion = {
           id: ulid(),
           type: action.payload,
-          props: {},
+          props: getComponentDefaultPropsByType(action.payload),
         } as TComponentPropsUnion;
         present.compConfigs[comp.id] = comp;
         present.sortableCompConfig.push(comp.id);

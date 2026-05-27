@@ -1,26 +1,25 @@
-import type { IImageComponentProps, TBasicComponentConfig, TransformedComponentConfig } from '..'
+import type { EmptyComponentOptions } from "./schema";
+import type { TBasicComponentConfig, TransformedComponentConfig } from "..";
 
-export interface IEmptyComponentProps {
-  image: string
-  description: string
-  imageWidth?: number
-  imageHeight?: number
-  imageObjectFit: IImageComponentProps['fit']
-}
+export type IEmptyComponentProps = EmptyComponentOptions;
 
-export type TEmptyComponentConfig = TBasicComponentConfig<'empty', IEmptyComponentProps>
+export type TEmptyComponentConfig = TBasicComponentConfig<
+  "empty",
+  IEmptyComponentProps
+>;
 
-export type TEmptyComponentConfigResult = TransformedComponentConfig<IEmptyComponentProps>
+export type TEmptyComponentConfigResult =
+  TransformedComponentConfig<IEmptyComponentProps>;
 
 export const emptyComponentDefaultConfig: TEmptyComponentConfigResult = {
   description: {
-    value: '暂无数据',
-    defaultValue: '暂无数据',
+    value: "暂无数据",
+    defaultValue: "暂无数据",
     isHidden: false,
   },
   image: {
-    value: '',
-    defaultValue: '',
+    value: undefined,
+    defaultValue: undefined,
     isHidden: false,
   },
   imageWidth: {
@@ -34,8 +33,8 @@ export const emptyComponentDefaultConfig: TEmptyComponentConfigResult = {
     isHidden: false,
   },
   imageObjectFit: {
-    value: 'contain',
-    defaultValue: 'contain',
+    value: "contain",
+    defaultValue: "contain",
     isHidden: false,
   },
-}
+};

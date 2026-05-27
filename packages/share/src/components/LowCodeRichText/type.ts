@@ -1,8 +1,7 @@
+import type { RichTextComponentOptions } from "./schema";
 import type { TBasicComponentConfig, TransformedComponentConfig } from "..";
 
-export interface IRichTextComponentProps {
-  content: string;
-}
+export type IRichTextComponentProps = RichTextComponentOptions;
 
 export type TRichTextComponentConfig = TBasicComponentConfig<
   "richText",

@@ -1,14 +1,7 @@
+import type { VideoComponentOptions } from "./schema";
 import type { TBasicComponentConfig, TransformedComponentConfig } from "..";
 
-// 视频组件的属性
-export interface IVideoComponentProps {
-  src: string;
-  poster: string;
-  autoPlay: boolean;
-  loop: boolean;
-  muted: boolean;
-  startTime: number;
-}
+export type IVideoComponentProps = VideoComponentOptions;
 
 export type TVideoComponentConfig = TBasicComponentConfig<
   "video",
@@ -18,16 +11,16 @@ export type TVideoComponentConfig = TBasicComponentConfig<
 export type TVideoComponentConfigResult =
   TransformedComponentConfig<IVideoComponentProps>;
 
-// 视频表单配置属性的值
 export const videoComponentDefaultConfig: TVideoComponentConfigResult = {
   autoPlay: {
-    value: true,
+    value: false,
     isHidden: true,
     defaultValue: false,
   },
   poster: {
-    value: "",
-    defaultValue: "",
+    value: "https://placehold.co/600x338/f5f5f5/000000/png?text=Video+Poster",
+    defaultValue:
+      "https://placehold.co/600x338/f5f5f5/000000/png?text=Video+Poster",
     isHidden: false,
   },
   loop: {
@@ -41,8 +34,8 @@ export const videoComponentDefaultConfig: TVideoComponentConfigResult = {
     isHidden: false,
   },
   src: {
-    value: "",
-    defaultValue: "",
+    value: "https://example.com/demo.mp4",
+    defaultValue: "https://example.com/demo.mp4",
     isHidden: false,
   },
   startTime: {

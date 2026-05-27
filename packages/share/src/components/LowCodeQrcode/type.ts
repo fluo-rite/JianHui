@@ -1,15 +1,7 @@
+import type { QrcodeComponentOptions } from "./schema";
 import type { TBasicComponentConfig, TransformedComponentConfig } from "..";
 
-// 二维码组件的属性
-export interface IQrcodeComponentProps {
-  icon: string;
-  size: number;
-  value: string;
-  color: string;
-  bgColor: string;
-  iconSize: number;
-  errorLevel: "L" | "M" | "Q" | "H";
-}
+export type IQrcodeComponentProps = QrcodeComponentOptions;
 
 export type TQrcodeComponentConfig = TBasicComponentConfig<
   "qrcode",
@@ -19,7 +11,6 @@ export type TQrcodeComponentConfig = TBasicComponentConfig<
 export type TQrcodeComponentConfigResult =
   TransformedComponentConfig<IQrcodeComponentProps>;
 
-// 二维码表单数据的格式
 export const qrcodeComponentDefaultConfig: TQrcodeComponentConfigResult = {
   value: {
     value: "-",
@@ -42,8 +33,8 @@ export const qrcodeComponentDefaultConfig: TQrcodeComponentConfigResult = {
     isHidden: false,
   },
   icon: {
-    value: "",
-    defaultValue: "",
+    value: undefined,
+    defaultValue: undefined,
     isHidden: true,
   },
   iconSize: {
