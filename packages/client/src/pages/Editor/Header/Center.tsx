@@ -1,5 +1,5 @@
 import { FundViewOutlined, SaveOutlined } from "@ant-design/icons";
-import { normalizeComponentPropsByType, type UpdatePageRequest } from "@lowcode/share";
+import type { UpdatePageRequest } from "@lowcode/share";
 import { useRequest } from "ahooks";
 import { Button, Space, message } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
@@ -16,7 +16,7 @@ function buildRequestPayload(
     .map((comp) => getComponentById(comp))
     .map((comp) => ({
       type: comp.type,
-      options: normalizeComponentPropsByType(comp.type, comp.props),
+      options: comp.props,
     }));
 
   return {

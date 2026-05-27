@@ -1,6 +1,5 @@
 import {
   getComponentOptionsValidationIssues,
-  normalizeComponentPropsByType,
   type ValidationIssue,
 } from "@lowcode/share";
 import type { useStoreComponents } from "~/hooks";
@@ -128,7 +127,7 @@ export function validatePageComponentOptionsBeforeSave(
     const component = getComponentById(componentId);
     const validationIssues = getComponentOptionsValidationIssues(
       component.type,
-      normalizeComponentPropsByType(component.type, component.props)
+      component.props
     );
 
     if (validationIssues.length > 0) {

@@ -6,7 +6,6 @@ import type {
   TComponentPropsUnion,
   TComponentTypes,
 } from "@lowcode/share";
-import { normalizeComponentPropsByType } from "@lowcode/share";
 import { componentsActions, type TStoreComponents } from "~/store";
 import { useAppDispatch, useAppSelector } from "~/store/hooks";
 
@@ -31,7 +30,7 @@ function mapPageDetailToStore(data: GetPageDetailResponse): TStoreComponents {
       acc[id] = {
         id,
         type: comp.type,
-        props: normalizeComponentPropsByType(comp.type, comp.options),
+        props: comp.options as TComponentPropsUnion["props"],
       };
       return acc;
     },

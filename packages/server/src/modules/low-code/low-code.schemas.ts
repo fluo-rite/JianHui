@@ -6,7 +6,6 @@ import type {
 import {
   getComponentOptionsValidationIssues,
   isSupportedComponentType,
-  normalizeComponentPropsByType,
 } from "@lowcode/share";
 import {
   HttpError,
@@ -20,13 +19,9 @@ function validatePageOptions(
   options: unknown,
   index: number
 ) {
-  const normalized = normalizeComponentPropsByType(
-    type,
-    options as Record<string, any>
-  );
   const validationIssues = getComponentOptionsValidationIssues(
     type,
-    normalized
+    options
   );
 
   if (validationIssues.length > 0) {
@@ -38,7 +33,7 @@ function validatePageOptions(
     );
   }
 
-  return normalized;
+  return options as UpdatePageRequest["components"][number]["options"];
 }
 
 export function parsePageId(value: unknown) {

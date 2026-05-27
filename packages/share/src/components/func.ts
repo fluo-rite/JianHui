@@ -94,13 +94,3 @@ export function getComponentDefaultPropsByType(type: SupportedComponentType) {
     getDefaultValueByConfig(componentDefaultConfigMap[type]),
   );
 }
-
-export function normalizeComponentPropsByType<T extends SupportedComponentType>(
-  type: T,
-  props?: Record<string, any> | null,
-) {
-  return {
-    ...getComponentDefaultPropsByType(type),
-    ...omitUndefinedProperties((props ?? {}) as Record<string, any>),
-  };
-}
