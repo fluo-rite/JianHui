@@ -97,10 +97,11 @@ jobs:
       - name: Prepare release bundle
         run: |
           BUNDLE_DIR="$RUNNER_TEMP/release-bundle"
-          mkdir -p "$BUNDLE_DIR/static" "$BUNDLE_DIR/scripts"
+          mkdir -p "$BUNDLE_DIR/static" "$BUNDLE_DIR/scripts" "$BUNDLE_DIR/db"
 
           cp -a packages/client/dist/. "$BUNDLE_DIR/static/"
           cp docker-compose.runtime.yml "$BUNDLE_DIR/"
+          cp packages/server/src/scripts/init-schema.sql "$BUNDLE_DIR/db/init-schema.sql"
           cp scripts/deploy.sh scripts/rollback.sh scripts/release-manage.sh scripts/release-switch.sh "$BUNDLE_DIR/scripts/"
 
           printf 'BACKEND_IMAGE=%s\nRELEASE_IMAGE=%s\n' "$BACKEND_IMAGE" "$RELEASE_IMAGE" > "$BUNDLE_DIR/deploy-image.env"
