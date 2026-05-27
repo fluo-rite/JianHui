@@ -1,6 +1,15 @@
 import type { IResources, UploadType } from '@lowcode/share';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { User } from './user.entity';
 
+@Index('idx_resources_account_type', ['account_id', 'type'])
 @Entity({ name: 'resources' })
 export class Resources implements IResources {
   @PrimaryGeneratedColumn()
@@ -17,4 +26,11 @@ export class Resources implements IResources {
 
   @Column()
   name: string = '';
+
+  @ManyToOne(() => User, (user) => user.resources, {
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE',
+  })
+  @JoinColumn({ name: 'account_id' })
+  account?: User;
 }

@@ -1,10 +1,13 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Page } from './page.entity';
+import { Resources } from './resources.entity';
 
-@Entity()
+@Entity({ name: 'user' })
 export class User {
   @PrimaryGeneratedColumn()
   id: number = 0;
 
+  @Index('uq_user_username', { unique: true })
   @Column()
   username: string = '';
 
@@ -19,4 +22,10 @@ export class User {
 
   @Column()
   open_id: string = '';
+
+  @OneToMany(() => Page, (page) => page.account)
+  pages?: Page[];
+
+  @OneToMany(() => Resources, (resource) => resource.account)
+  resources?: Resources[];
 }

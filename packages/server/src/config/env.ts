@@ -6,15 +6,6 @@ function getNumberEnv(name: string, fallback: number) {
   return Number.isFinite(value) ? value : fallback;
 }
 
-function getBooleanEnv(name: string, fallback: boolean) {
-  const value = process.env[name];
-  if (value === undefined) {
-    return fallback;
-  }
-
-  return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
-}
-
 const packageRoot = resolve(__dirname, '..', '..', '..');
 const uploadTempDir = resolve(packageRoot, '__temps__');
 
@@ -29,7 +20,6 @@ export const env = {
   dbUsername: process.env.DB_USERNAME ?? 'root',
   dbPassword: process.env.DB_PASSWORD ?? '',
   dbDatabase: process.env.DB_DATABASE ?? 'jianhui-lowcode',
-  dbSynchronize: getBooleanEnv('DB_SYNCHRONIZE', true),
   jwtSecret: process.env.JWT_SECRET ?? 'change-me',
   jwtExpiresIn: '7d',
   aliOssRegion: process.env.ALI_OSS_REGION ?? 'oss-cn-guangzhou',

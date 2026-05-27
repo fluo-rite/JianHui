@@ -3,31 +3,32 @@ import type {
   PostQuestionDataRequest,
   TPageStatus,
   UpdatePageRequest,
-} from "@lowcode/share";
-import { objectOmit } from "@lowcode/share";
-import { In } from "typeorm";
-import type { DataSource, Repository } from "typeorm";
-import { Component } from "../../entities/component.entity";
-import { ComponentData } from "../../entities/component-data.entity";
-import { Page } from "../../entities/page.entity";
-import { HttpError } from "../../utils/http";
-import type { TCurrentUser } from "../../utils/request-user";
-import { sanitizeRichTextHtml } from "./rich-text";
+} from '@lowcode/share';
+import { In } from 'typeorm';
+import type { DataSource, Repository } from 'typeorm';
+import { Component } from '../../entities/component.entity';
+import { ComponentData } from '../../entities/component-data.entity';
+import { Page } from '../../entities/page.entity';
+import { HttpError } from '../../utils/http';
+import type { TCurrentUser } from '../../utils/request-user';
+import { sanitizeRichTextHtml } from './rich-text';
 
-function sanitizeComponentOptions(component: UpdatePageRequest["components"][number]) {
-  if (component.type !== "richText") {
+function sanitizeComponentOptions(
+  component: UpdatePageRequest['components'][number],
+) {
+  if (component.type !== 'richText') {
     return component;
   }
 
   const options =
-    component.options && typeof component.options === "object"
+    component.options && typeof component.options === 'object'
       ? { ...component.options }
       : {};
 
   options.content =
-    typeof options.content === "string"
+    typeof options.content === 'string'
       ? sanitizeRichTextHtml(options.content)
-      : "";
+      : '';
 
   return {
     ...component,
@@ -35,12 +36,17 @@ function sanitizeComponentOptions(component: UpdatePageRequest["components"][num
   };
 }
 
+interface SubmissionCountRow {
+  page_id: number | string;
+  submission_count: number | string;
+}
+
 export class LowCodeService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly pageRepository: Repository<Page>,
     private readonly componentRepository: Repository<Component>,
-    private readonly componentDataRepository: Repository<ComponentData>
+    private readonly componentDataRepository: Repository<ComponentData>,
   ) {}
 
   private async getOwnedPage(pageId: number, userId: number) {
@@ -50,30 +56,50 @@ export class LowCodeService {
     });
   }
 
-  private async getPageComponents(page: Page) {
-    const components: Component[] = [];
+  private async getPageComponents(pageId: number) {
+    return this.componentRepository.find({
+      where: { page_id: pageId },
+      order: { sort_index: 'ASC' },
+    });
+  }
 
-    for (const componentId of page.components) {
-      const component = await this.componentRepository.findOneBy({
-        id: Number(componentId),
-      });
-      if (component) {
-        components.push(component);
-      }
+  private async getSubmissionCount(pageId: number) {
+    return this.componentDataRepository.countBy({
+      page_id: pageId,
+    });
+  }
+
+  private async getSubmissionCountMap(pageIds: number[]) {
+    if (pageIds.length === 0) {
+      return new Map<number, number>();
     }
 
-    return components;
+    const rows = await this.componentDataRepository
+      .createQueryBuilder('component_data')
+      .select('component_data.page_id', 'page_id')
+      .addSelect('COUNT(*)', 'submission_count')
+      .where('component_data.page_id IN (:...pageIds)', { pageIds })
+      .groupBy('component_data.page_id')
+      .getRawMany<SubmissionCountRow>();
+
+    return new Map(
+      rows.map((row) => [Number(row.page_id), Number(row.submission_count)]),
+    );
+  }
+
+  private async getPageComponentMap(pageId: number) {
+    const components = await this.getPageComponents(pageId);
+    return new Map(components.map((component) => [component.id, component]));
   }
 
   private async buildPageDetail(page: Page) {
-    const components = await this.getPageComponents(page);
-    const submission_count = await this.componentDataRepository.countBy({
-      page_id: page.id,
-    });
+    const [components, submission_count] = await Promise.all([
+      this.getPageComponents(page.id),
+      this.getSubmissionCount(page.id),
+    ]);
 
     return {
-      ...objectOmit(page, ["components"]),
-      componentIds: page.components,
+      ...page,
       components,
       submission_count,
     };
@@ -88,17 +114,16 @@ export class LowCodeService {
   async createPage(user: TCurrentUser) {
     const page = await this.pageRepository.save({
       account_id: user.id,
-      page_name: "未命名页面",
-      desc: "",
-      tdk: "",
-      components: [],
-      status: "draft",
+      page_name: '未命名页面',
+      desc: '',
+      tdk: '',
+      status: 'draft',
       published_at: null,
       closed_at: null,
     });
 
     return {
-      msg: "页面已创建",
+      msg: '页面已创建',
       data: await this.buildPageDetail(page),
     };
   }
@@ -106,27 +131,24 @@ export class LowCodeService {
   async getPages(user: TCurrentUser): Promise<GetPageListItemResponse[]> {
     const pages = await this.pageRepository.find({
       where: { account_id: user.id },
-      order: { created_at: "DESC" },
+      order: { updated_at: 'DESC' },
     });
-
-    return Promise.all(
-      pages.map(async (page) => {
-        const submission_count = await this.componentDataRepository.countBy({
-          page_id: page.id,
-        });
-
-        return {
-          ...objectOmit(page, ["components"]),
-          submission_count,
-        };
-      })
+    const submissionCountMap = await this.getSubmissionCountMap(
+      pages.map((page) => page.id),
     );
+
+    return pages.map((page) => {
+      return {
+        ...page,
+        submission_count: submissionCountMap.get(page.id) ?? 0,
+      };
+    });
   }
 
   async getPageDetail(pageId: number, user: TCurrentUser) {
     const page = await this.getOwnedPage(pageId, user.id);
     if (!page) {
-      throw new HttpError(404, "页面不存在");
+      throw new HttpError(404, '页面不存在');
     }
 
     return this.buildPageDetail(page);
@@ -135,9 +157,9 @@ export class LowCodeService {
   async updatePage(pageId: number, body: UpdatePageRequest, user: TCurrentUser) {
     const page = await this.getOwnedPage(pageId, user.id);
     if (!page) {
-      throw new HttpError(404, "页面不存在");
+      throw new HttpError(404, '页面不存在');
     }
-    this.assertPageStatus(page, "draft", "仅未发布页面允许编辑");
+    this.assertPageStatus(page, 'draft', '仅未发布页面允许编辑');
 
     const { components, ...pageFields } = body;
     const queryRunner = this.dataSource.createQueryRunner();
@@ -148,44 +170,39 @@ export class LowCodeService {
     try {
       await queryRunner.manager.update(Page, page.id, {
         ...pageFields,
-        components: [],
         updated_at: new Date(),
       });
 
-      for (const componentId of page.components) {
-        await queryRunner.manager.delete(Component, Number(componentId));
-      }
+      await queryRunner.manager.delete(Component, { page_id: page.id });
 
-      const insertedComponentIds: string[] = [];
-      for (const component of components.map(sanitizeComponentOptions)) {
-        const insertResult = await queryRunner.manager.insert(Component, {
-          ...component,
+      const nextComponents = components.map((component, index) => {
+        const normalized = sanitizeComponentOptions(component);
+        return {
+          ...normalized,
           page_id: page.id,
-          account_id: user.id,
-        });
-        insertedComponentIds.push(String(insertResult.identifiers[0].id));
-      }
-
-      await queryRunner.manager.update(Page, page.id, {
-        components: insertedComponentIds,
-        updated_at: new Date(),
+          sort_index: index,
+        };
       });
+
+      if (nextComponents.length > 0) {
+        await queryRunner.manager.insert(Component, nextComponents);
+      }
 
       await queryRunner.commitTransaction();
 
       const updatedPage = await this.getOwnedPage(page.id, user.id);
       if (!updatedPage) {
-        throw new HttpError(404, "页面不存在");
+        throw new HttpError(404, '页面不存在');
       }
 
       return {
-        msg: "页面已保存",
+        msg: '页面已保存',
         data: await this.buildPageDetail(updatedPage),
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       const message = error instanceof Error ? error.message : String(error);
-      throw new HttpError(500, `页面保存失败：${message}`);
+      throw new HttpError(500, `页面保存失败: ${message}`);
     } finally {
       await queryRunner.release();
     }
@@ -194,57 +211,57 @@ export class LowCodeService {
   async publishPage(pageId: number, user: TCurrentUser) {
     const page = await this.getOwnedPage(pageId, user.id);
     if (!page) {
-      throw new HttpError(404, "页面不存在");
+      throw new HttpError(404, '页面不存在');
     }
-    this.assertPageStatus(page, "draft", "仅未发布页面允许发布");
+    this.assertPageStatus(page, 'draft', '仅未发布页面允许发布');
 
     await this.pageRepository.update(page.id, {
-      status: "published",
+      status: 'published',
       published_at: new Date(),
       closed_at: null,
       updated_at: new Date(),
     });
 
-    return { msg: "页面已发布" };
+    return { msg: '页面已发布' };
   }
 
   async closePage(pageId: number, user: TCurrentUser) {
     const page = await this.getOwnedPage(pageId, user.id);
     if (!page) {
-      throw new HttpError(404, "页面不存在");
+      throw new HttpError(404, '页面不存在');
     }
-    this.assertPageStatus(page, "published", "仅已发布页面允许关闭");
+    this.assertPageStatus(page, 'published', '仅已发布页面允许关闭');
 
     await this.pageRepository.update(page.id, {
-      status: "closed",
+      status: 'closed',
       closed_at: new Date(),
       updated_at: new Date(),
     });
 
-    return { msg: "页面已关闭" };
+    return { msg: '页面已关闭' };
   }
 
   async reopenPage(pageId: number, user: TCurrentUser) {
     const page = await this.getOwnedPage(pageId, user.id);
     if (!page) {
-      throw new HttpError(404, "页面不存在");
+      throw new HttpError(404, '页面不存在');
     }
-    this.assertPageStatus(page, "closed", "仅已关闭页面允许重新打开");
+    this.assertPageStatus(page, 'closed', '仅已关闭页面允许重新打开');
 
     await this.pageRepository.update(page.id, {
-      status: "published",
+      status: 'published',
       published_at: new Date(),
       closed_at: null,
       updated_at: new Date(),
     });
 
-    return { msg: "页面已重新打开" };
+    return { msg: '页面已重新打开' };
   }
 
   async deletePage(pageId: number, user: TCurrentUser) {
     const page = await this.getOwnedPage(pageId, user.id);
     if (!page) {
-      throw new HttpError(404, "页面不存在");
+      throw new HttpError(404, '页面不存在');
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -253,20 +270,14 @@ export class LowCodeService {
     await queryRunner.startTransaction();
 
     try {
-      await queryRunner.manager.delete(ComponentData, { page_id: page.id });
-
-      for (const componentId of page.components) {
-        await queryRunner.manager.delete(Component, Number(componentId));
-      }
-
       await queryRunner.manager.delete(Page, page.id);
       await queryRunner.commitTransaction();
 
-      return { msg: "页面已删除" };
+      return { msg: '页面已删除' };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       const message = error instanceof Error ? error.message : String(error);
-      throw new HttpError(500, `页面删除失败：${message}`);
+      throw new HttpError(500, `页面删除失败: ${message}`);
     } finally {
       await queryRunner.release();
     }
@@ -278,18 +289,15 @@ export class LowCodeService {
     }
 
     const page = await this.pageRepository.findOneBy({ id });
-    if (!page || page.status === "draft") {
+    if (!page || page.status === 'draft') {
       return null;
     }
 
-    if (page.status === "closed") {
+    if (page.status === 'closed') {
       return {
-        ...objectOmit(page, ["components"]),
-        componentIds: [],
+        ...page,
         components: [],
-        submission_count: await this.componentDataRepository.countBy({
-          page_id: page.id,
-        }),
+        submission_count: await this.getSubmissionCount(page.id),
       };
     }
 
@@ -298,7 +306,7 @@ export class LowCodeService {
 
   async isQuestionDataPosted(key: string, pageId: number) {
     const page = await this.pageRepository.findOneBy({ id: pageId });
-    if (!page || page.status !== "published") {
+    if (!page || page.status !== 'published') {
       return false;
     }
 
@@ -312,61 +320,58 @@ export class LowCodeService {
   async postQuestionData(body: PostQuestionDataRequest, key: string) {
     const { page_id, props } = body;
     const page = await this.pageRepository.findOneBy({ id: page_id });
-    if (!page || page.status !== "published") {
-      throw new HttpError(400, "页面当前不可提交");
+    if (!page || page.status !== 'published') {
+      throw new HttpError(400, '页面当前不可提交');
     }
 
-    const isExist = await this.componentDataRepository.findOneBy({
-      user: key,
-      page_id,
-    });
+    await this.componentDataRepository
+      .createQueryBuilder()
+      .insert()
+      .into(ComponentData)
+      .values({ user: key, page_id, props })
+      .orIgnore()
+      .execute();
 
-    if (!isExist) {
-      await this.componentDataRepository.save({ user: key, page_id, props });
-    }
-
-    return { msg: "提交成功！感谢您的参与！" };
+    return { msg: '提交成功！感谢您的参与！' };
   }
 
   async getQuestionComponents(user: TCurrentUser, pageId: number) {
     const page = await this.getOwnedPage(pageId, user.id);
     if (!page) {
-      throw new HttpError(404, "页面不存在");
+      throw new HttpError(404, '页面不存在');
     }
 
-    return this.componentRepository.findBy({
-      account_id: user.id,
-      page_id: page.id,
-      type: In(["input", "textArea", "radio", "checkbox"]),
+    return this.componentRepository.find({
+      where: {
+        page_id: page.id,
+        type: In(['input', 'textArea', 'radio', 'checkbox']),
+      },
+      order: { sort_index: 'ASC' },
     });
   }
 
   async getQuestionData(userId: number, pageId: number) {
     const page = await this.getOwnedPage(pageId, userId);
     if (!page) {
-      throw new HttpError(404, "页面不存在");
+      throw new HttpError(404, '页面不存在');
     }
 
-    const componentDatas = await this.componentDataRepository.findBy({
-      page_id: page.id,
-    });
+    const [componentDatas, componentMap] = await Promise.all([
+      this.componentDataRepository.findBy({
+        page_id: page.id,
+      }),
+      this.getPageComponentMap(page.id),
+    ]);
 
-    return Promise.all(
-      componentDatas.map(async (componentData) =>
-        Promise.all(
-          componentData.props.map(async (item) => {
-            const component = await this.componentRepository.findOneBy({
-              id: item.id,
-              page_id: page.id,
-            });
-            return {
-              result: item,
-              type: component?.type,
-              options: component?.options?.options || {},
-            };
-          })
-        )
-      )
+    return componentDatas.map((componentData) =>
+      componentData.props.map((item) => {
+        const component = componentMap.get(item.id);
+        return {
+          result: item,
+          type: component?.type,
+          options: component?.options?.options || {},
+        };
+      }),
     );
   }
 
@@ -381,34 +386,32 @@ export class LowCodeService {
   }) {
     const page = await this.getOwnedPage(page_id, userId);
     if (!page) {
-      throw new HttpError(404, "页面不存在");
+      throw new HttpError(404, '页面不存在');
     }
 
-    const componentDatas = await this.componentDataRepository.findBy({
-      page_id: page.id,
-    });
+    const [componentDatas, componentMap] = await Promise.all([
+      this.componentDataRepository.findBy({
+        page_id: page.id,
+      }),
+      this.getPageComponentMap(page.id),
+    ]);
+    const component = componentMap.get(id);
 
-    return Promise.all(
-      componentDatas
-        .map((componentData) =>
-          componentData.props
-            .filter((item) => item.id === id)
-            .map(async (item) => {
-              const component = await this.componentRepository.findOneBy({
-                id: item.id,
-                page_id: page.id,
-              });
-              return {
-                value: Array.isArray(item.value)
-                  ? item.value
-                  : item.value == null
-                    ? []
-                    : [item.value],
-                options: component?.options?.options || null,
-              };
-            })
-        )
-        .flat()
-    );
+    return componentDatas
+      .map((componentData) =>
+        componentData.props
+          .filter((item) => item.id === id)
+          .map((item) => {
+            return {
+              value: Array.isArray(item.value)
+                ? item.value
+                : item.value == null
+                  ? []
+                  : [item.value],
+              options: component?.options?.options || null,
+            };
+          }),
+      )
+      .flat();
   }
 }

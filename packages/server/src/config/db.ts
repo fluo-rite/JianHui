@@ -15,6 +15,5 @@ export function createDataSource() {
     password: env.dbPassword,
     database: env.dbDatabase,
     entities: [User, Page, Component, ComponentData, Resources],
-    synchronize: env.dbSynchronize,
   });
 }

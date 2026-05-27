@@ -1,5 +1,5 @@
 import { FundViewOutlined, SaveOutlined } from "@ant-design/icons";
-import type { IComponent, UpdatePageRequest } from "@lowcode/share";
+import type { UpdatePageRequest } from "@lowcode/share";
 import { useRequest } from "ahooks";
 import { Button, Space, message } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
@@ -11,12 +11,12 @@ function buildRequestPayload(
   storeComponents: ReturnType<typeof useStoreComponents>["store"],
   getComponentById: ReturnType<typeof useStoreComponents>["getComponentById"]
 ): UpdatePageRequest {
-  const components = storeComponents.sortableCompConfig
+  const components: UpdatePageRequest["components"] = storeComponents.sortableCompConfig
     .map((comp) => getComponentById(comp))
     .map((comp) => ({
       type: comp.type,
       options: comp.props,
-    })) as IComponent[];
+    }));
 
   return {
     components,

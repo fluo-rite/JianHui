@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "db:init": "pnpm --filter server run db:init",
     "run:client": "pnpm --filter client run dev",
     "run:server": "pnpm --filter server run start:dev",
     "run:share": "pnpm --filter share run dev",

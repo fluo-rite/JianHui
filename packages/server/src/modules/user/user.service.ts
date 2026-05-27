@@ -9,6 +9,16 @@ import { User } from '../../entities/user.entity';
 import { HttpError } from '../../utils/http';
 import { getSecret } from '../../utils/secret';
 
+function isDuplicateEntryError(error: unknown) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    // mysql2 duplicate entry error code
+    error.code === 'ER_DUP_ENTRY'
+  );
+}
+
 export class UserService {
   constructor(private readonly userRepository: Repository<User>) {}
 
@@ -23,13 +33,22 @@ export class UserService {
     }
 
     const avatar = 'https://placehold.co/120x120/f5f5f5/000000/png?text=^_^';
-    const user = await this.userRepository.save({
-      username,
-      head_img: avatar,
-      phone: '',
-      password: getSecret(password),
-      open_id: '',
-    });
+    let user: User;
+
+    try {
+      user = await this.userRepository.save({
+        username,
+        head_img: avatar,
+        phone: '',
+        password: getSecret(password),
+        open_id: '',
+      });
+    } catch (error) {
+      if (isDuplicateEntryError(error)) {
+        throw new HttpError(400, '璇ョ敤鎴峰悕宸茶娉ㄥ唽');
+      }
+      throw error;
+    }
 
     return {
       data: sign({ id: user.id }, jwtConfig.secret, {

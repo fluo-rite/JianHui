@@ -3,10 +3,19 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
+  ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
+  JoinColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { Component } from "./component.entity";
+import { ComponentData } from "./component-data.entity";
+import { User } from "./user.entity";
 
+@Index("idx_page_account_created_at", ["account_id", "created_at"])
+@Index("idx_page_account_updated_at", ["account_id", "updated_at"])
 @Entity({ name: "page" })
 export class Page implements ILowCode {
   @PrimaryGeneratedColumn()
@@ -17,9 +26,6 @@ export class Page implements ILowCode {
 
   @Column()
   page_name: string = "";
-
-  @Column({ type: "simple-array" })
-  components: string[] = [];
 
   @Column()
   tdk: string = "";
@@ -41,4 +47,17 @@ export class Page implements ILowCode {
 
   @Column({ type: "datetime", nullable: true })
   closed_at: Date | null = null;
+
+  @ManyToOne(() => User, (user) => user.pages, {
+    onDelete: "RESTRICT",
+    onUpdate: "CASCADE",
+  })
+  @JoinColumn({ name: "account_id" })
+  account?: User;
+
+  @OneToMany(() => Component, (component) => component.page)
+  components?: Component[];
+
+  @OneToMany(() => ComponentData, (componentData) => componentData.page)
+  component_datas?: ComponentData[];
 }

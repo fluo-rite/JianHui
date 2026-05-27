@@ -6,7 +6,6 @@ export interface ILowCode {
   id: number;
   account_id: number;
   page_name: string;
-  components: string[];
   tdk: string;
   desc: string;
   status: TPageStatus;
@@ -18,8 +17,8 @@ export interface ILowCode {
 
 export interface IComponent {
   id: number;
-  account_id: number;
   page_id: number;
+  sort_index: number;
   type: TComponentTypes;
   options: Record<string, any>;
 }

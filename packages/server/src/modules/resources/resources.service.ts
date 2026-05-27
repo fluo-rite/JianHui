@@ -29,7 +29,10 @@ export class ResourcesService {
   }
 
   async deleteResource(id: number, accountId: number) {
-    const resource = await this.resourcesRepository.findOneBy({ id });
+    const resource = await this.resourcesRepository.findOneBy({
+      id,
+      account_id: accountId,
+    });
     if (!resource) {
       throw new HttpError(400, '资源不存在');
     }

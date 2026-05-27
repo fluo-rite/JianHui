@@ -8,6 +8,7 @@ services:
     ports:
       - "127.0.0.1:${MYSQL_HOST_PORT:-3306}:3306"
     volumes:
+      - ./packages/server/src/scripts/init-schema.sql:/docker-entrypoint-initdb.d/001-init-schema.sql:ro
       - mysql-data:/var/lib/mysql
     healthcheck:
       test:
@@ -45,7 +46,6 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-lowcode-root}
       DB_DATABASE: ${MYSQL_DATABASE:-jianhui-lowcode}
-      DB_SYNCHRONIZE: ${DB_SYNCHRONIZE:-true}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-lowcode-redis}
