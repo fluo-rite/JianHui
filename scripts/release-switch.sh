@@ -2,9 +2,6 @@
 
 APP_DIR="${APP_DIR:-/srv/jianhui/app}"
 STATIC_ROOT="${STATIC_ROOT:-/var/www/html}"
-DEPLOY_ROOT="${DEPLOY_ROOT:-$(dirname "$APP_DIR")}"
-RELEASES_DIR="${RELEASES_DIR:-$DEPLOY_ROOT/releases}"
-CURRENT_RELEASE_FILE="${CURRENT_RELEASE_FILE:-$DEPLOY_ROOT/current-release}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.runtime.yml}"
 IMAGE_ENV_FILE="${IMAGE_ENV_FILE:-deploy-image.env}"
 CONTAINER_REGISTRY_HOST="${CONTAINER_REGISTRY_HOST:-}"
@@ -51,6 +48,14 @@ compose_pull() {
     pull
 }
 
+compose_down() {
+  run_as_root docker compose \
+    --env-file "$APP_DIR/.env" \
+    --env-file "$APP_DIR/$IMAGE_ENV_FILE" \
+    -f "$APP_DIR/$COMPOSE_FILE" \
+    down --remove-orphans
+}
+
 compose_up() {
   run_as_root docker compose \
     --env-file "$APP_DIR/.env" \
@@ -68,16 +73,16 @@ compose_ps() {
 }
 
 install_runtime_files() {
-  local release_dir="$1"
+  local source_dir="$1"
 
-  run_as_root mkdir -p "$APP_DIR" "$STATIC_ROOT"
-  run_as_root cp "$release_dir/$COMPOSE_FILE" "$APP_DIR/$COMPOSE_FILE"
-  run_as_root cp "$release_dir/$IMAGE_ENV_FILE" "$APP_DIR/$IMAGE_ENV_FILE"
-  run_as_root cp "$release_dir/scripts/release-switch.sh" "$APP_DIR/release-switch.sh"
-  run_as_root cp "$release_dir/scripts/release-manage.sh" "$APP_DIR/release-manage.sh"
-  run_as_root cp "$release_dir/scripts/deploy.sh" "$APP_DIR/deploy.sh"
-  run_as_root cp "$release_dir/scripts/rollback.sh" "$APP_DIR/rollback.sh"
-  run_as_root chmod +x "$APP_DIR/release-switch.sh" "$APP_DIR/release-manage.sh" "$APP_DIR/deploy.sh" "$APP_DIR/rollback.sh"
+  run_as_root mkdir -p "$APP_DIR" "$STATIC_ROOT" "$APP_DIR/db"
+  run_as_root cp "$source_dir/$COMPOSE_FILE" "$APP_DIR/$COMPOSE_FILE"
+  run_as_root cp "$source_dir/$IMAGE_ENV_FILE" "$APP_DIR/$IMAGE_ENV_FILE"
+  run_as_root cp "$source_dir/db/init-schema.sql" "$APP_DIR/db/init-schema.sql"
+  run_as_root cp "$source_dir/scripts/release-switch.sh" "$APP_DIR/release-switch.sh"
+  run_as_root cp "$source_dir/scripts/release-manage.sh" "$APP_DIR/release-manage.sh"
+  run_as_root cp "$source_dir/scripts/deploy.sh" "$APP_DIR/deploy.sh"
+  run_as_root chmod +x "$APP_DIR/release-switch.sh" "$APP_DIR/release-manage.sh" "$APP_DIR/deploy.sh"
 }
 
 publish_static_dir() {
@@ -87,7 +92,6 @@ publish_static_dir() {
   run_as_root cp -a "$static_dir/." "$STATIC_ROOT/"
 }
 
-mark_current_release() {
-  local release_id="$1"
-  echo "$release_id" | run_as_root tee "$CURRENT_RELEASE_FILE" >/dev/null
+cleanup_docker_artifacts() {
+  run_as_root docker image prune -af
 }

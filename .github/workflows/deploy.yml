@@ -19,9 +19,6 @@ jobs:
       DEPLOY_ARCHIVE: jianhui-release-bundle.tar.gz
       DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
       STATIC_ROOT: ${{ secrets.STATIC_ROOT }}
-      RELEASE_ID: ${{ github.run_id }}-${{ github.run_attempt }}
-      GIT_SHA: ${{ github.sha }}
-      GIT_REF: ${{ github.ref_name }}
       CONTAINER_REGISTRY_HOST: ${{ secrets.CONTAINER_REGISTRY_HOST }}
       CONTAINER_IMAGE_REPOSITORY_PREFIX: ${{ secrets.CONTAINER_IMAGE_REPOSITORY_PREFIX }}
       CONTAINER_REGISTRY_USERNAME: ${{ secrets.CONTAINER_REGISTRY_USERNAME }}
@@ -102,10 +99,9 @@ jobs:
           cp -a packages/client/dist/. "$BUNDLE_DIR/static/"
           cp docker-compose.runtime.yml "$BUNDLE_DIR/"
           cp packages/server/src/scripts/init-schema.sql "$BUNDLE_DIR/db/init-schema.sql"
-          cp scripts/deploy.sh scripts/rollback.sh scripts/release-manage.sh scripts/release-switch.sh "$BUNDLE_DIR/scripts/"
+          cp scripts/deploy.sh scripts/release-manage.sh scripts/release-switch.sh "$BUNDLE_DIR/scripts/"
 
           printf 'BACKEND_IMAGE=%s\nRELEASE_IMAGE=%s\n' "$BACKEND_IMAGE" "$RELEASE_IMAGE" > "$BUNDLE_DIR/deploy-image.env"
-          printf 'RELEASE_ID=%s\nGIT_SHA=%s\nGIT_REF=%s\n' "$RELEASE_ID" "$GIT_SHA" "$GIT_REF" > "$BUNDLE_DIR/release-meta.env"
 
           tar -czf "$RUNNER_TEMP/$DEPLOY_ARCHIVE" -C "$BUNDLE_DIR" .
           cp "$RUNNER_TEMP/$DEPLOY_ARCHIVE" "$DEPLOY_ARCHIVE"
@@ -125,9 +121,6 @@ jobs:
         env:
           DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
           STATIC_ROOT: ${{ env.STATIC_ROOT }}
-          RELEASE_ID: ${{ env.RELEASE_ID }}
-          GIT_SHA: ${{ env.GIT_SHA }}
-          GIT_REF: ${{ env.GIT_REF }}
           CONTAINER_REGISTRY_HOST: ${{ env.CONTAINER_REGISTRY_HOST }}
           CONTAINER_REGISTRY_USERNAME: ${{ env.CONTAINER_REGISTRY_USERNAME }}
           CONTAINER_REGISTRY_PASSWORD: ${{ env.CONTAINER_REGISTRY_PASSWORD }}
@@ -140,7 +133,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-          envs: DEPLOY_PATH,STATIC_ROOT,RELEASE_ID,GIT_SHA,GIT_REF,CONTAINER_REGISTRY_HOST,CONTAINER_REGISTRY_USERNAME,CONTAINER_REGISTRY_PASSWORD,NGINX_ACTIVE_LINK,NGINX_APP_CONF,NGINX_MAINTENANCE_CONF,PROD_ENV_FILE
+          envs: DEPLOY_PATH,STATIC_ROOT,CONTAINER_REGISTRY_HOST,CONTAINER_REGISTRY_USERNAME,CONTAINER_REGISTRY_PASSWORD,NGINX_ACTIVE_LINK,NGINX_APP_CONF,NGINX_MAINTENANCE_CONF,PROD_ENV_FILE
           script: |
             set -eu
             run_as_root() {
@@ -148,21 +141,17 @@ jobs:
             }
             test -n "$DEPLOY_PATH"
             test "$DEPLOY_PATH" != "/"
-            DEPLOY_ROOT="$(dirname "$DEPLOY_PATH")"
-            SOURCE_DIR="$DEPLOY_ROOT/incoming/$RELEASE_ID"
+            SOURCE_DIR="$DEPLOY_PATH/.incoming-${{ github.run_id }}-${{ github.run_attempt }}"
             run_as_root rm -rf "$SOURCE_DIR"
             run_as_root mkdir -p "$SOURCE_DIR"
             run_as_root mkdir -p "$DEPLOY_PATH"
             run_as_root tar -xzf "/tmp/${{ env.DEPLOY_ARCHIVE }}" -C "$SOURCE_DIR"
             run_as_root rm -f "/tmp/${{ env.DEPLOY_ARCHIVE }}"
             printf '%s\n' "$PROD_ENV_FILE" | run_as_root tee "$DEPLOY_PATH/.env" >/dev/null
-            run_as_root chmod +x "$SOURCE_DIR/scripts/deploy.sh" "$SOURCE_DIR/scripts/rollback.sh" "$SOURCE_DIR/scripts/release-manage.sh" "$SOURCE_DIR/scripts/release-switch.sh"
+            run_as_root chmod +x "$SOURCE_DIR/scripts/deploy.sh" "$SOURCE_DIR/scripts/release-manage.sh" "$SOURCE_DIR/scripts/release-switch.sh"
             APP_DIR="$DEPLOY_PATH" \
             SOURCE_DIR="$SOURCE_DIR" \
             STATIC_ROOT="$STATIC_ROOT" \
-            RELEASE_ID="$RELEASE_ID" \
-            GIT_SHA="$GIT_SHA" \
-            GIT_REF="$GIT_REF" \
             CONTAINER_REGISTRY_HOST="$CONTAINER_REGISTRY_HOST" \
             CONTAINER_REGISTRY_USERNAME="$CONTAINER_REGISTRY_USERNAME" \
             CONTAINER_REGISTRY_PASSWORD="$CONTAINER_REGISTRY_PASSWORD" \
