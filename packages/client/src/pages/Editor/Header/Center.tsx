@@ -40,7 +40,7 @@ export default function Center() {
     }
   );
 
-  async function handleSave(showMessage = true) {
+  async function handleSave() {
     if (!pageId) {
       message.warning("页面参数错误");
       return false;
@@ -51,7 +51,7 @@ export default function Center() {
   }
 
   async function handleGoPreview() {
-    const saved = await handleSave(false);
+    const saved = await handleSave();
     if (!saved) return;
     nav(`/preview/${pageId}`);
   }
