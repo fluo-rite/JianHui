@@ -106,7 +106,7 @@ export class LowCodeService {
   async getPages(user: TCurrentUser): Promise<GetPageListItemResponse[]> {
     const pages = await this.pageRepository.find({
       where: { account_id: user.id },
-      order: { updated_at: "DESC" },
+      order: { created_at: "DESC" },
     });
 
     return Promise.all(

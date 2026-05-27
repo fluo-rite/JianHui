@@ -39,18 +39,22 @@ export default async function Page({ params }: PageType) {
 
   if (data.status === "closed") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f5f5] p-6">
-        <div className="rounded-xl bg-white p-10 text-center shadow-sm">
+      <div className="flex min-h-screen items-center justify-center bg-[#f6f7fb] px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mx-auto w-full max-w-[560px] rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm sm:px-10">
           <h1 className="mb-3 text-2xl font-semibold">页面已关闭</h1>
-          <p className="text-gray-500">当前问卷已暂停访问，暂时无法填写。</p>
+          <p className="text-gray-500">
+            当前问卷已暂停访问，暂时无法填写。
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="App">
-      <ComponentRender data={data} id={params.id} />
+    <div className="min-h-screen bg-[#f6f7fb] px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mx-auto w-full max-w-[720px]">
+        <ComponentRender data={data} id={params.id} />
+      </div>
     </div>
   );
 }

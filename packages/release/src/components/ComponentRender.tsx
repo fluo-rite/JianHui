@@ -24,10 +24,10 @@ function generateComponent(
   const Component = getComponentByType(conf.type as never);
 
   if (!usingInputType.includes(conf.type)) {
-    return <Component {...conf.props} key={conf.id} />;
+    return <Component {...conf.props} />;
   }
 
-  return <Component {...conf.props} key={conf.id} onUpdate={onUpdate} />;
+  return <Component {...conf.props} onUpdate={onUpdate} />;
 }
 
 function getQuestionComponentValueField(component: { type: string }) {
@@ -93,21 +93,26 @@ export default function ComponentRender({ data }: ComponentRenderProps) {
           props: comp.options,
         };
       })
-      .map((comp) =>
-        generateComponent(comp, (value) => {
-          setLocalData((draft) => {
-            const target = draft.components.find(
-              (item) => String(item.id) === comp.id
-            );
-            if (!target) return;
+      .map((comp) => (
+        <div
+          key={comp.id}
+          className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+        >
+          {generateComponent(comp, (value) => {
+            setLocalData((draft) => {
+              const target = draft.components.find(
+                (item) => String(item.id) === comp.id
+              );
+              if (!target) return;
 
-            const field = getQuestionComponentValueField(target);
-            if (field) {
-              target.options[field] = value;
-            }
-          });
-        })
-      );
+              const field = getQuestionComponentValueField(target);
+              if (field) {
+                target.options[field] = value;
+              }
+            });
+          })}
+        </div>
+      ));
   }
 
   useRequest(
@@ -174,15 +179,22 @@ export default function ComponentRender({ data }: ComponentRenderProps) {
 
   return (
     <div
-      className={`${isPosted ? "opacity-50 pointer-events-none select-none" : ""}`}
+      className={`${isPosted ? "pointer-events-none select-none opacity-50" : ""}`}
     >
-      {generateComponents()}
+      <div className="space-y-4 sm:space-y-5">{generateComponents()}</div>
 
       {data.components.some((comp) => usingInputType.includes(comp.type)) && (
-        <div className="flex items-center justify-center">
-          <Button type="primary" onClick={run} loading={loading}>
-            提交问卷
-          </Button>
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:mt-5 sm:p-5">
+          <div className="flex items-center justify-center">
+            <Button
+              type="primary"
+              onClick={run}
+              loading={loading}
+              className="h-11 w-full max-w-[240px] rounded-full"
+            >
+              提交问卷
+            </Button>
+          </div>
         </div>
       )}
     </div>
