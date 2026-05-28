@@ -2,7 +2,7 @@ import { Tabs } from "antd";
 import { AppstoreOutlined } from "@ant-design/icons";
 import ComponentList from "./LeftPanel/ComponentList";
 
-export default function EdiotLeftPanel() {
+export default function EditorLeftPanel() {
   const items = [
     {
       key: "component-list",
