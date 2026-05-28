@@ -1,16 +1,10 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import { Input } from 'antd'
-import { getDefaultValueByConfig } from '..'
-import { textAreaComponentDefaultConfig } from '.'
 import { type ITextAreaComponentProps } from '.'
 
 const { TextArea } = Input
 
-export default function TextAreaComponent(_props: ITextAreaComponentProps) {
-  const props = useMemo(() => {
-    return { ...getDefaultValueByConfig(textAreaComponentDefaultConfig), ..._props }
-  }, [_props])
-
+export default function TextAreaComponent(props: ITextAreaComponentProps) {
   return (
     <div className="space-y-2 p-4">
       <span className="text-lg font-bold">{props.title}:</span> <br />

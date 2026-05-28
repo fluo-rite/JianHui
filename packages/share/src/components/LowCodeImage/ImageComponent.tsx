@@ -1,16 +1,7 @@
-import React, { useMemo } from "react";
-import { getDefaultValueByConfig } from "..";
-import { type IImageComponentProps, imageComponentDefaultConfig } from ".";
+import React from "react";
+import { type IImageComponentProps } from ".";
 
-export default function ImageComponent(_props: IImageComponentProps) {
-  // 当配置属性发生变化，重置属性并且重新渲染
-  const props = useMemo(() => {
-    return {
-      ...getDefaultValueByConfig(imageComponentDefaultConfig),
-      ..._props,
-    };
-  }, [_props]);
-
+export default function ImageComponent(props: IImageComponentProps) {
   const img = (
     <img
       src={props.url}
@@ -20,12 +11,13 @@ export default function ImageComponent(_props: IImageComponentProps) {
     />
   );
 
-  // 如果图片可跳转，则覆盖上a标签
-  if (props.handleClicked === "open-url")
+  if (props.handleClicked === "open-url") {
     return (
       <a href={props.link} target="_blank" rel="noreferrer">
         {img}
       </a>
     );
-  else return img;
+  }
+
+  return img;
 }

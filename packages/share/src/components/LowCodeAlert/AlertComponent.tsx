@@ -1,17 +1,8 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Alert } from "antd";
-import { getDefaultValueByConfig } from "..";
 import type { IAlertComponentProps } from ".";
-import { alertComponentDefaultConfig } from ".";
 
-export default function AlertComponent(_props: IAlertComponentProps) {
-  const props = useMemo(() => {
-    return {
-      ...getDefaultValueByConfig(alertComponentDefaultConfig),
-      ..._props,
-    };
-  }, [_props]);
-
+export default function AlertComponent(props: IAlertComponentProps) {
   return (
     <Alert
       type={props.type}

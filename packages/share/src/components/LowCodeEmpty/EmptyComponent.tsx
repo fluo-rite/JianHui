@@ -1,14 +1,8 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import { Empty } from 'antd'
-import { getDefaultValueByConfig } from '..'
 import type { IEmptyComponentProps } from '.'
-import { emptyComponentDefaultConfig } from '.'
 
-export default function EmptyComponent(_props: IEmptyComponentProps) {
-  const props = useMemo(() => {
-    return { ...getDefaultValueByConfig(emptyComponentDefaultConfig), ..._props }
-  }, [_props])
-
+export default function EmptyComponent(props: IEmptyComponentProps) {
   return (
     <Empty
       className="flex flex-col items-center justify-center"

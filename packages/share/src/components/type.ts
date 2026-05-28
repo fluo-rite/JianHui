@@ -46,7 +46,7 @@ export interface TBasicComponentConfig<
 > {
   type: T;
   id: string;
-  props: Partial<P>;
+  props: P;
 }
 
 // 剔除类型里面的可选

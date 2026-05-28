@@ -1,16 +1,8 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Input } from "antd";
-import { getDefaultValueByConfig } from "..";
-import { type IInputComponentProps, inputComponentDefaultConfig } from ".";
+import { type IInputComponentProps } from ".";
 
-export default function InputComponent(_props: IInputComponentProps) {
-  const props = useMemo(() => {
-    return {
-      ...getDefaultValueByConfig(inputComponentDefaultConfig),
-      ..._props,
-    };
-  }, [_props]);
-
+export default function InputComponent(props: IInputComponentProps) {
   return (
     <div className="space-y-3 p-4 sm:p-5">
       <span className="block text-base font-semibold leading-6 text-slate-900 sm:text-lg">

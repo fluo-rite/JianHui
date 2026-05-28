@@ -1,20 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { getDefaultValueByConfig } from "..";
-import { textComponentDefaultConfig } from ".";
+import React, { useEffect, useState } from "react";
 import type { ITextComponentProps } from ".";
 
-export default function TextComponent(_props: ITextComponentProps) {
-  const props = useMemo(() => {
-    return {
-      ...getDefaultValueByConfig(textComponentDefaultConfig),
-      ..._props,
-    };
-  }, [_props]);
-
+export default function TextComponent(props: ITextComponentProps) {
   const [size, setSize] = useState("");
 
   useEffect(() => {
-    switch (_props.size) {
+    switch (props.size) {
       case "sm":
         setSize("text-sm");
         break;
@@ -34,7 +25,7 @@ export default function TextComponent(_props: ITextComponentProps) {
         setSize("text-base");
         break;
     }
-  }, [_props]);
+  }, [props.size]);
 
   return <span className={size}>{props.title}</span>;
 }

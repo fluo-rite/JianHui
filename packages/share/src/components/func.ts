@@ -50,10 +50,7 @@ export function fillComponentPropsByConfig<
     result[key] = {
       isHidden: value.isHidden,
       defaultValue: value.defaultValue,
-      value:
-        props?.[key] !== undefined
-          ? calcValueByString(props[key])
-          : value.defaultValue,
+      value: calcValueByString(props?.[key]),
     };
   }
   return result;

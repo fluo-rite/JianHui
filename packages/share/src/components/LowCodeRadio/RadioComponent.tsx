@@ -1,16 +1,8 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Radio } from "antd";
-import { getDefaultValueByConfig } from "..";
-import { type IRadioComponentProps, radioComponentDefaultConfig } from ".";
+import { type IRadioComponentProps } from ".";
 
-export default function RadioComponent(_props: IRadioComponentProps) {
-  const props = useMemo(() => {
-    return {
-      ...getDefaultValueByConfig(radioComponentDefaultConfig),
-      ..._props,
-    };
-  }, [_props]);
-
+export default function RadioComponent(props: IRadioComponentProps) {
   return (
     <div className="space-y-3 p-4 sm:p-5">
       <span className="block text-base font-semibold leading-6 text-slate-900 sm:text-lg">

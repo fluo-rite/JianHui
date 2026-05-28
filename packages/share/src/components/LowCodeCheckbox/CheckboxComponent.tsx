@@ -1,19 +1,8 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Checkbox } from "antd";
-import { getDefaultValueByConfig } from "../func";
-import {
-  type ICheckboxComponentProps,
-  checkboxComponentDefaultConfig,
-} from ".";
+import { type ICheckboxComponentProps } from ".";
 
-export default function CheckboxComponent(_props: ICheckboxComponentProps) {
-  const props = useMemo(() => {
-    return {
-      ...getDefaultValueByConfig(checkboxComponentDefaultConfig),
-      ..._props,
-    };
-  }, [_props]);
-
+export default function CheckboxComponent(props: ICheckboxComponentProps) {
   return (
     <div className="space-y-3 p-4 sm:p-5">
       <span className="block text-base font-semibold leading-6 text-slate-900 sm:text-lg">

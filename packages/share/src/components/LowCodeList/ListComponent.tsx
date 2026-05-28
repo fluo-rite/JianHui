@@ -1,17 +1,8 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Avatar, List } from "antd";
-import { getDefaultValueByConfig } from "..";
-import { listComponentDefaultConfig } from ".";
 import type { IListComponentProps } from ".";
 
-export default function ListComponent(_props: IListComponentProps) {
-  const props = useMemo(() => {
-    return {
-      ...getDefaultValueByConfig(listComponentDefaultConfig),
-      ..._props,
-    };
-  }, [_props]);
-
+export default function ListComponent(props: IListComponentProps) {
   return (
     <List
       itemLayout="horizontal"

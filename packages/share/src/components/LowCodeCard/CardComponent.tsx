@@ -1,16 +1,10 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import { Card } from 'antd'
-import { getDefaultValueByConfig } from '..'
 import type { ICardComponentProps } from '.'
-import { cardComponentDefaultConfig } from '.'
 
 const { Meta } = Card
 
-export default function CardComponent(_props: ICardComponentProps) {
-  const props = useMemo(() => {
-    return { ...getDefaultValueByConfig(cardComponentDefaultConfig), ..._props }
-  }, [_props])
-
+export default function CardComponent(props: ICardComponentProps) {
   return (
     <Card
       hoverable
