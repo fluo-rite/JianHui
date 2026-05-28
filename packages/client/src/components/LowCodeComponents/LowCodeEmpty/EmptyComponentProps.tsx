@@ -1,40 +1,46 @@
-import { useMemo } from "react";
+import { Input, Select } from "antd";
 import {
   type IEmptyComponentProps,
   emptyComponentDefaultConfig,
-  fillComponentPropsByConfig,
+  isFieldHidden,
 } from "@lowcode/share";
-import { Input, Select } from "antd";
 import { FormContainer, FormPropLabel } from "..";
 import { fitOptions } from "../LowCodeImage/ImageComponentProps";
 
-export default function EmptyComponentProps(_props: IEmptyComponentProps) {
-  const props = useMemo(() => {
-    return fillComponentPropsByConfig(_props, emptyComponentDefaultConfig);
-  }, [_props]);
-
+export default function EmptyComponentProps(props: IEmptyComponentProps) {
   return (
-    <FormContainer layout="vertical" config={props}>
-      <FormPropLabel name="image" label="图片" prop={props.image}>
+    <FormContainer layout="vertical" values={props}>
+      <FormPropLabel
+        hidden={isFieldHidden(emptyComponentDefaultConfig, "image")}
+        name="image"
+        label="图片"
+      >
         <Input />
-        {/* <UploadEditOrChooiseInput propName="image" type="image" /> */}
-      </FormPropLabel>
-      <FormPropLabel name="description" label="描述" prop={props.description}>
-        <Input />
-      </FormPropLabel>
-      <FormPropLabel name="imageWidth" label="图片宽度" prop={props.imageWidth}>
-        <Input type="number" />
       </FormPropLabel>
       <FormPropLabel
-        name="imageHeight"
-        label="图片高度"
-        prop={props.imageHeight}
+        hidden={isFieldHidden(emptyComponentDefaultConfig, "description")}
+        name="description"
+        label="描述"
+      >
+        <Input />
+      </FormPropLabel>
+      <FormPropLabel
+        hidden={isFieldHidden(emptyComponentDefaultConfig, "imageWidth")}
+        name="imageWidth"
+        label="图片宽度"
       >
         <Input type="number" />
       </FormPropLabel>
       <FormPropLabel
+        hidden={isFieldHidden(emptyComponentDefaultConfig, "imageHeight")}
+        name="imageHeight"
+        label="图片高度"
+      >
+        <Input type="number" />
+      </FormPropLabel>
+      <FormPropLabel
+        hidden={isFieldHidden(emptyComponentDefaultConfig, "imageObjectFit")}
         name="imageObjectFit"
-        prop={props.imageObjectFit}
         label="图片填充方式："
       >
         <Select options={fitOptions} />

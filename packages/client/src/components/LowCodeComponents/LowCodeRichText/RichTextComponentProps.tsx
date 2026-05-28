@@ -1,29 +1,21 @@
 import type { IRichTextComponentProps } from "@lowcode/share";
-import {
-  fillComponentPropsByConfig,
-  richTextComponentDefaultConfig,
-} from "@lowcode/share";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
 import { useStoreComponents } from "~/hooks";
 
 export default function RichTextComponentProps(
-  _props: IRichTextComponentProps
+  props: IRichTextComponentProps
 ) {
-  const props = useMemo(() => {
-    return fillComponentPropsByConfig(_props, richTextComponentDefaultConfig);
-  }, [_props]);
   const { updateCurrentComponent } = useStoreComponents();
-
   const editorRef = useRef<ReactQuill>(null);
 
   return (
     <div className="flex items-center justify-center">
       <ReactQuill
         theme="snow"
-        value={props.content.value ?? ""}
+        value={props.content ?? ""}
         onChange={(_value, _delta, _source, editor) =>
           updateCurrentComponent({
             content: editor.getHTML(),

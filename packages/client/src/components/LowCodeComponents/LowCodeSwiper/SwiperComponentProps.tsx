@@ -1,9 +1,8 @@
 import { Form, Input, Select, Switch } from "antd";
-import { useMemo } from "react";
 import type { ISwiperComponentProps } from "@lowcode/share";
 import {
   defaultImageInfo,
-  fillComponentPropsByConfig,
+  isFieldHidden,
   swiperComponentDefaultConfig,
 } from "@lowcode/share";
 import {
@@ -13,52 +12,28 @@ import {
   UploadEditOrChooiseInput,
 } from "..";
 
-export default function SwiperComponentProps(_props: ISwiperComponentProps) {
-  const props = useMemo(() => {
-    return fillComponentPropsByConfig(_props, swiperComponentDefaultConfig);
-  }, [_props]);
-
+export default function SwiperComponentProps(props: ISwiperComponentProps) {
   const fitOptions = [
-    {
-      value: "contain",
-      label: "包含",
-    },
-    {
-      value: "cover",
-      label: "覆盖",
-    },
-    {
-      value: "fill",
-      label: "填充",
-    },
-    {
-      value: "none",
-      label: "无",
-    },
-    {
-      value: "scale-down",
-      label: "缩小",
-    },
-    {
-      value: "initial",
-      label: "默认",
-    },
-    {
-      value: "revert",
-      label: "恢复",
-    },
-    {
-      value: "unset",
-      label: "重置",
-    },
+    { value: "contain", label: "包含" },
+    { value: "cover", label: "覆盖" },
+    { value: "fill", label: "填充" },
+    { value: "none", label: "无" },
+    { value: "scale-down", label: "缩小" },
+    { value: "initial", label: "默认" },
+    { value: "revert", label: "恢复" },
+    { value: "unset", label: "重置" },
+  ];
+
+  const clickOptions = [
+    { value: "open-url", label: "跳转链接" },
+    { value: "none", label: "无" },
   ];
 
   return (
     <>
-      {/* 轮播图的表单 */}
-      <FormContainer config={props} layout="vertical">
+      <FormContainer values={props} layout="vertical">
         <FormPropLabel
-          prop={props.interval}
+          hidden={isFieldHidden(swiperComponentDefaultConfig, "interval")}
           label="自动切换时间间隔（毫秒）"
           name="interval"
         >
@@ -66,8 +41,8 @@ export default function SwiperComponentProps(_props: ISwiperComponentProps) {
         </FormPropLabel>
 
         <FormPropLabel
-          prop={props.autoPlay}
-          label="是否启用自动播放："
+          hidden={isFieldHidden(swiperComponentDefaultConfig, "autoPlay")}
+          label="是否启用自动播放？"
           name="autoPlay"
           valuePropName="checked"
         >
@@ -75,8 +50,8 @@ export default function SwiperComponentProps(_props: ISwiperComponentProps) {
         </FormPropLabel>
 
         <FormPropLabel
-          prop={props.showIndicators}
-          label="是否展示面板指示点"
+          hidden={isFieldHidden(swiperComponentDefaultConfig, "showIndicators")}
+          label="是否显示面板指示点？"
           name="showIndicators"
           valuePropName="checked"
         >
@@ -84,7 +59,7 @@ export default function SwiperComponentProps(_props: ISwiperComponentProps) {
         </FormPropLabel>
 
         <FormPropLabel
-          prop={props.dotPosition}
+          hidden={isFieldHidden(swiperComponentDefaultConfig, "dotPosition")}
           label="选择面板指示点位置"
           name="dotPosition"
         >
@@ -99,19 +74,18 @@ export default function SwiperComponentProps(_props: ISwiperComponentProps) {
         </FormPropLabel>
       </FormContainer>
 
-      {/* 图片列表表单 */}
       <FormContainerWithList
         keyName="images"
-        id={props.id.value}
-        items={props.images.value}
+        id={props.id}
+        items={props.images}
         newItemDefaultValue={defaultImageInfo}
       >
-        <Form.Item label="图片图片填充方式：大小：" name="fit">
+        <Form.Item label="图片填充方式：" name="fit">
           <Select options={fitOptions} />
         </Form.Item>
 
         <Form.Item label="图片点击后方式：" name="handleClicked">
-          <Select options={fitOptions} />
+          <Select options={clickOptions} />
         </Form.Item>
 
         <Form.Item label="图片跳转地址：" name="link">
@@ -122,10 +96,7 @@ export default function SwiperComponentProps(_props: ISwiperComponentProps) {
           <UploadEditOrChooiseInput
             type="image"
             propName="url"
-            listOptions={{
-              keyName: "images",
-              defaultValues: defaultImageInfo,
-            }}
+            listOptions={{ keyName: "images" }}
           />
         </Form.Item>
       </FormContainerWithList>

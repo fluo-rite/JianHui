@@ -1,44 +1,45 @@
-import { useMemo } from 'react'
+import { Input, Segmented, Switch } from "antd";
+import type { SegmentedLabeledOption } from "antd/es/segmented";
+import type { ISplitComponentProps } from "@lowcode/share";
+import {
+  isFieldHidden,
+  splitComponentDefaultConfig,
+} from "@lowcode/share";
+import { FormContainer, FormPropLabel } from "..";
 
-import { Input, Segmented } from 'antd'
-import type { SegmentedLabeledOption } from 'antd/es/segmented'
-import type { ISplitComponentProps } from '@lowcode/share'
-import { fillComponentPropsByConfig, splitComponentDefaultConfig } from '@lowcode/share'
-import { FormContainer, FormPropLabel } from '..'
-
-export default function SplitComponentProps(_props: ISplitComponentProps) {
-  const props = useMemo(() => {
-    return fillComponentPropsByConfig(_props, splitComponentDefaultConfig)
-  }, [_props])
-
+export default function SplitComponentProps(props: ISplitComponentProps) {
   const options: SegmentedLabeledOption[] = [
-    {
-      value: 'left',
-      label: '距左',
-    },
-    {
-      value: 'center',
-      label: '距中',
-    },
-    {
-      value: 'right',
-      label: '距右',
-    },
-  ]
+    { value: "left", label: "靠左" },
+    { value: "center", label: "居中" },
+    { value: "right", label: "靠右" },
+  ];
 
   return (
-    <FormContainer config={props}>
-      <FormPropLabel prop={props.text} name="text" label="文字：">
+    <FormContainer values={props}>
+      <FormPropLabel
+        hidden={isFieldHidden(splitComponentDefaultConfig, "text")}
+        name="text"
+        label="文字："
+      >
         <Input placeholder="请输入文字" />
       </FormPropLabel>
 
-      <FormPropLabel prop={props.dashed} name="dashed" label="是否设置为虚线：">
-        <Input placeholder="请输入虚线" />
+      <FormPropLabel
+        hidden={isFieldHidden(splitComponentDefaultConfig, "dashed")}
+        name="dashed"
+        label="是否设置为虚线："
+        valuePropName="checked"
+      >
+        <Switch />
       </FormPropLabel>
 
-      <FormPropLabel prop={props.orientation} name="orientation" label="文字位置：">
+      <FormPropLabel
+        hidden={isFieldHidden(splitComponentDefaultConfig, "orientation")}
+        name="orientation"
+        label="文字位置："
+      >
         <Segmented options={options} />
       </FormPropLabel>
     </FormContainer>
-  )
+  );
 }

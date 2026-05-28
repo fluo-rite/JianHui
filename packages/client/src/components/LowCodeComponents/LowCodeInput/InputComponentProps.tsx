@@ -1,27 +1,30 @@
 import { Input } from "antd";
-import { useMemo } from "react";
-import type { IInputComponentProps } from "@lowcode/share";
 import {
-  fillComponentPropsByConfig,
+  type IInputComponentProps,
   inputComponentDefaultConfig,
+  isFieldHidden,
 } from "@lowcode/share";
 import { FormContainer, FormPropLabel } from "..";
 
-export default function InputComponentProps(_props: IInputComponentProps) {
-  const props = useMemo(() => {
-    return fillComponentPropsByConfig(_props, inputComponentDefaultConfig);
-  }, [_props]);
-
+export default function InputComponentProps(props: IInputComponentProps) {
   return (
-    <FormContainer layout="vertical" config={props}>
-      <FormPropLabel prop={props.title} name="title" label="标题：">
-        <Input />
-      </FormPropLabel>
-      <FormPropLabel prop={props.text} name="text" label="默认输入的内容：">
+    <FormContainer layout="vertical" values={props}>
+      <FormPropLabel
+        hidden={isFieldHidden(inputComponentDefaultConfig, "title")}
+        name="title"
+        label="标题："
+      >
         <Input />
       </FormPropLabel>
       <FormPropLabel
-        prop={props.placeholder}
+        hidden={isFieldHidden(inputComponentDefaultConfig, "text")}
+        name="text"
+        label="默认输入的内容："
+      >
+        <Input />
+      </FormPropLabel>
+      <FormPropLabel
+        hidden={isFieldHidden(inputComponentDefaultConfig, "placeholder")}
         name="placeholder"
         label="占位符："
       >

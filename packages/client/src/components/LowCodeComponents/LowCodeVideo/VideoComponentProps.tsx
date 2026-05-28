@@ -1,26 +1,24 @@
 import type { IVideoComponentProps } from "@lowcode/share";
 import {
-  fillComponentPropsByConfig,
+  isFieldHidden,
   videoComponentDefaultConfig,
 } from "@lowcode/share";
 import { Input, Switch } from "antd";
-import { useMemo } from "react";
 import { FormContainer, FormPropLabel, UploadEditOrChooiseInput } from "..";
 
-export default function VideoComponentProps(_props: IVideoComponentProps) {
-  // 将数据转换成深层对象，方便逻辑处理
-  const props = useMemo(() => {
-    return fillComponentPropsByConfig(_props, videoComponentDefaultConfig);
-  }, [_props]);
-
+export default function VideoComponentProps(props: IVideoComponentProps) {
   return (
-    <FormContainer layout="vertical" config={props}>
-      <FormPropLabel prop={props.src} name="src" label="播放器地址：">
+    <FormContainer layout="vertical" values={props}>
+      <FormPropLabel
+        hidden={isFieldHidden(videoComponentDefaultConfig, "src")}
+        name="src"
+        label="播放器地址："
+      >
         <UploadEditOrChooiseInput propName="src" type="video" />
       </FormPropLabel>
 
       <FormPropLabel
-        prop={props.startTime}
+        hidden={isFieldHidden(videoComponentDefaultConfig, "startTime")}
         name="startTime"
         label="初始播放时间（秒）："
       >
@@ -28,7 +26,7 @@ export default function VideoComponentProps(_props: IVideoComponentProps) {
       </FormPropLabel>
 
       <FormPropLabel
-        prop={props.autoPlay}
+        hidden={isFieldHidden(videoComponentDefaultConfig, "autoPlay")}
         name="autoPlay"
         label="是否启用自动播放："
         valuePropName="checked"
@@ -37,7 +35,7 @@ export default function VideoComponentProps(_props: IVideoComponentProps) {
       </FormPropLabel>
 
       <FormPropLabel
-        prop={props.loop}
+        hidden={isFieldHidden(videoComponentDefaultConfig, "loop")}
         name="loop"
         label="是否启用循环播放："
         valuePropName="checked"
@@ -46,7 +44,7 @@ export default function VideoComponentProps(_props: IVideoComponentProps) {
       </FormPropLabel>
 
       <FormPropLabel
-        prop={props.muted}
+        hidden={isFieldHidden(videoComponentDefaultConfig, "muted")}
         name="muted"
         label="是否启用静音播放："
         valuePropName="checked"

@@ -1,26 +1,33 @@
 import { Input } from "antd";
-import { useMemo } from "react";
 import {
   type ICardComponentProps,
   cardComponentDefaultConfig,
-  fillComponentPropsByConfig,
+  isFieldHidden,
 } from "@lowcode/share";
 import { FormContainer, FormPropLabel, UploadEditOrChooiseInput } from "..";
 
-export default function CardComponentProps(_props: ICardComponentProps) {
-  const props = useMemo(() => {
-    return fillComponentPropsByConfig(_props, cardComponentDefaultConfig);
-  }, [_props]);
-
+export default function CardComponentProps(props: ICardComponentProps) {
   return (
-    <FormContainer layout="vertical" config={props}>
-      <FormPropLabel prop={props.coverImg} name="coverImg" label="封面图片:">
+    <FormContainer layout="vertical" values={props}>
+      <FormPropLabel
+        hidden={isFieldHidden(cardComponentDefaultConfig, "coverImg")}
+        name="coverImg"
+        label="封面图片:"
+      >
         <UploadEditOrChooiseInput propName="coverImg" type="image" />
       </FormPropLabel>
-      <FormPropLabel prop={props.title} name="title" label="标题:">
+      <FormPropLabel
+        hidden={isFieldHidden(cardComponentDefaultConfig, "title")}
+        name="title"
+        label="标题:"
+      >
         <Input />
       </FormPropLabel>
-      <FormPropLabel prop={props.description} name="description" label="描述:">
+      <FormPropLabel
+        hidden={isFieldHidden(cardComponentDefaultConfig, "description")}
+        name="description"
+        label="描述:"
+      >
         <Input />
       </FormPropLabel>
     </FormContainer>

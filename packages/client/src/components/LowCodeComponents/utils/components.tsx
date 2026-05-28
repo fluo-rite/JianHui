@@ -7,13 +7,9 @@ import type {
   InputRef,
   ImageProps,
 } from "antd";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { FC, ReactNode, RefAttributes } from "react";
-import type {
-  TComponentPropsUnion,
-  TransformedComponentConfig,
-  IResources,
-} from "@lowcode/share";
+import type { TComponentPropsUnion, IResources } from "@lowcode/share";
 import { objectOmit, UploadType } from "@lowcode/share";
 import { useStoreComponents } from "~/hooks";
 import {
@@ -26,21 +22,21 @@ import { useRequest } from "ahooks";
 import { deleteResource, getResources, uploadFile } from "~/api/resource";
 
 interface IFormPropLabelProps extends FormItemProps {
-  prop: {
-    isHidden: boolean;
-  };
+  hidden?: boolean;
 }
 
 export const FormPropLabel: FC<IFormPropLabelProps> = (props) => {
-  if (props.prop.isHidden) {
+  if (props.hidden) {
     return null;
   }
 
-  return <Form.Item {...objectOmit(props, ["prop"])}>{props.children}</Form.Item>;
+  return (
+    <Form.Item {...objectOmit(props, ["hidden"])}>{props.children}</Form.Item>
+  );
 };
 
 interface IFormContainer extends FormProps {
-  config: TransformedComponentConfig<Record<string, any>>;
+  values: Record<string, any>;
   onValuesChangeAfter?: (
     changedValues: Record<keyof TComponentPropsUnion["props"], any>
   ) => void;
@@ -50,21 +46,9 @@ export const FormContainer: FC<IFormContainer> = (props) => {
   const [form] = Form.useForm();
   const { updateCurrentComponent } = useStoreComponents();
 
-  const propValues = useMemo(
-    () =>
-      Object.entries(props.config)
-        .map(([key, value]) => {
-          return { [key]: value.value };
-        })
-        .reduce((acc, cur) => {
-          return { ...acc, ...cur };
-        }, {}),
-    [props.config]
-  );
-
   useEffect(() => {
-    form.setFieldsValue({ ...propValues });
-  }, [form, propValues]);
+    form.setFieldsValue({ ...props.values });
+  }, [form, props.values]);
 
   function handleValuesChange(
     changedValues: Record<keyof TComponentPropsUnion["props"], any>
@@ -78,7 +62,7 @@ export const FormContainer: FC<IFormContainer> = (props) => {
       form={form}
       layout="vertical"
       onValuesChange={handleValuesChange}
-      {...objectOmit(props, ["onValuesChangeAfter"])}
+      {...objectOmit(props, ["onValuesChangeAfter", "values"])}
     >
       {props.children as ReactNode}
     </Form>
@@ -88,7 +72,7 @@ export const FormContainer: FC<IFormContainer> = (props) => {
 interface FormListItemProps<T> {
   index: number;
   isExpand: boolean;
-  newItemDefaultValue: T;
+  item: T;
   children: ReactNode;
   onClick: () => void;
   keyName?: string;
@@ -96,6 +80,13 @@ interface FormListItemProps<T> {
 
 export const FormListItem: FC<FormListItemProps<any>> = (props) => {
   const { updateCurrentCompConfigWithArray } = useStoreComponents();
+  const [form] = Form.useForm();
+
+  useEffect(() => {
+    if (props.isExpand) {
+      form.setFieldsValue({ ...props.item });
+    }
+  }, [form, props.isExpand, props.item]);
 
   function handleValuesChange(changeValues: Record<string, any>) {
     const objEntry = Object.entries(changeValues)[0];
@@ -107,13 +98,6 @@ export const FormListItem: FC<FormListItemProps<any>> = (props) => {
       value: objEntry[1],
     });
   }
-
-  const values = { ...(objectOmit(props, ["key"] as any) as any) };
-  const [form] = Form.useForm();
-
-  useEffect(() => {
-    props.isExpand && form?.setFieldsValue({ ...values });
-  }, [values, form, props.isExpand]);
 
   return (
     <div className="border my-1 p-2" onClick={props.onClick}>
@@ -174,11 +158,10 @@ export const FormContainerWithList: FC<FormContainerWithListProps<any>> = (
       {props.items.map((item, index) => {
         return (
           <FormListItem
-            {...item}
+            item={item}
             index={index}
             key={item.id}
             isExpand={expandIndex === index}
-            newItemDefaultValue={props.newItemDefaultValue}
             onClick={() => setExpandIndex(index)}
             keyName={props.keyName}
           >
@@ -292,7 +275,9 @@ export const UploadComponent: FC<UploadComponentProps> = ({
   );
 
   useEffect(() => {
-    visible && execGetResources();
+    if (visible) {
+      execGetResources();
+    }
   }, [visible, execGetResources]);
 
   const handleUploadChange = async () => {
@@ -376,7 +361,6 @@ interface UploadEditOrChooiseInputProps
   type: "video" | "image";
   listOptions?: {
     keyName?: string;
-    defaultValues: Record<string, any>;
   };
 }
 
