@@ -1,8 +1,0 @@
-@include b("column") {
-  display: flex;
-  justify-content: center;
-  .item {
-    flex: 1;
-    min-height: 296px;
-  }
-}
