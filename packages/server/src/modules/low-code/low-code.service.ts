@@ -1,6 +1,5 @@
 import type {
   GetPageListItemResponse,
-  PostQuestionDataRequest,
   TPageStatus,
   UpdatePageRequest,
 } from '@lowcode/share';
@@ -131,7 +130,7 @@ export class LowCodeService {
   async getPages(user: TCurrentUser): Promise<GetPageListItemResponse[]> {
     const pages = await this.pageRepository.find({
       where: { account_id: user.id },
-      order: { updated_at: 'DESC' },
+      order: { created_at: 'DESC' },
     });
     const submissionCountMap = await this.getSubmissionCountMap(
       pages.map((page) => page.id),
@@ -320,8 +319,17 @@ export class LowCodeService {
     return !!isExist;
   }
 
-  async postQuestionData(body: PostQuestionDataRequest, key: string) {
-    const { page_id, props } = body;
+  async postQuestionData(
+    page_id: number,
+    body: {
+      props: {
+        id: number;
+        value: string | string[];
+      }[];
+    },
+    key: string,
+  ) {
+    const { props } = body;
     const page = await this.pageRepository.findOneBy({ id: page_id });
     if (!page || page.status !== 'published') {
       throw new HttpError(400, '页面当前不可提交');

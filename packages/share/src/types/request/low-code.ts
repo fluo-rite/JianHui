@@ -14,7 +14,7 @@ export type UpdatePageRequest = Omit<
   components: UpdatePageComponent[];
 };
 
-export type PostQuestionDataRequest = Pick<IComponentData, "page_id" | "props">;
+export type PostQuestionDataRequest = Pick<IComponentData, "props">;
 
 export type GetPageDetailResponse = ILowCode & {
   components: IComponent[];
@@ -25,4 +25,4 @@ export type GetPageListItemResponse = ILowCode & {
   submission_count: number;
 };
 
-export type GetQuestionDataByIdRequest = Pick<IComponent, "id" | "page_id">;
+export type GetQuestionDataByIdRequest = Pick<IComponent, "id">;

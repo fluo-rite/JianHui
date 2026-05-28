@@ -118,14 +118,14 @@ export default function ComponentRender({ data }: ComponentRenderProps) {
   useRequest(
     async () => {
       const response = await fetch(
-        `${API_BASE_URL}/low_code/is_question_data_posted?page_id=${data.id}`
+        `${API_BASE_URL}/low_code/public/pages/${data.id}/submission`
       );
 
-      return response.json() as Promise<{ data: boolean }>;
+      return response.json() as Promise<{ data: { submitted: boolean } }>;
     },
     {
       onSuccess: ({ data }) => {
-        if (data) {
+        if (data.submitted) {
           setIsPosted(true);
           message.open({ content: "您已提交过问卷，感谢您的参与" });
         }
@@ -144,23 +144,25 @@ export default function ComponentRender({ data }: ComponentRenderProps) {
         return { msg: "请填写完整问卷信息", data: false };
       }
 
-      const response = await fetch(`${API_BASE_URL}/low_code/question_data`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-        body: JSON.stringify({
-          page_id: data.id,
-          props: localData.components
-            .filter((comp) => usingInputType.includes(comp.type))
-            .map((comp) => {
-              return {
-                id: comp.id,
-                value: getQuestionComponentSubmitValue(comp),
-              };
-            }),
-        }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/low_code/public/pages/${data.id}/submissions`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+          body: JSON.stringify({
+            props: localData.components
+              .filter((comp) => usingInputType.includes(comp.type))
+              .map((comp) => {
+                return {
+                  id: comp.id,
+                  value: getQuestionComponentSubmitValue(comp),
+                };
+              }),
+          }),
+        }
+      );
 
       return response.json();
     },

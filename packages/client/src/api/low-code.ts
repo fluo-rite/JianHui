@@ -1,7 +1,4 @@
-import type {
-  GetQuestionDataByIdRequest,
-  UpdatePageRequest,
-} from "@lowcode/share";
+import type { TPageStatus, UpdatePageRequest } from "@lowcode/share";
 import request from "~/utils/request";
 
 export async function createPage() {
@@ -25,21 +22,13 @@ export async function updatePage(id: number, data: UpdatePageRequest) {
   });
 }
 
-export async function publishPage(id: number) {
-  return request(`/low_code/pages/${id}/publish`, {
-    method: "POST",
-  });
-}
-
-export async function closePage(id: number) {
-  return request(`/low_code/pages/${id}/close`, {
-    method: "POST",
-  });
-}
-
-export async function reopenPage(id: number) {
-  return request(`/low_code/pages/${id}/reopen`, {
-    method: "POST",
+export async function updatePageStatus(
+  id: number,
+  status: Extract<TPageStatus, "published" | "closed">
+) {
+  return request(`/low_code/pages/${id}/status`, {
+    data: { status },
+    method: "PATCH",
   });
 }
 
@@ -50,22 +39,18 @@ export async function deletePage(id: number) {
 }
 
 export async function getQuestionComponents(pageId: number) {
-  return request("/low_code/question_components", {
-    params: { page_id: pageId },
-  });
+  return request(`/low_code/pages/${pageId}/question-components`);
 }
 
 export async function getQuestionData(pageId: number) {
-  return request("/low_code/question_data", {
-    params: { page_id: pageId },
-  });
+  return request(`/low_code/pages/${pageId}/submissions`);
 }
 
-export async function getQuestionDataByTypeRequest(
-  data: GetQuestionDataByIdRequest
+export async function getQuestionComponentSubmissions(
+  pageId: number,
+  componentId: number
 ) {
-  return request("/low_code/get_question_data_by_id", {
-    data,
-    method: "POST",
-  });
+  return request(
+    `/low_code/pages/${pageId}/question-components/${componentId}/submissions`
+  );
 }

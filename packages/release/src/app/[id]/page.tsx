@@ -8,7 +8,7 @@ const API_INTERNAL_BASE_URL =
 
 async function getData(id: string) {
   const response = await fetch(
-    `${API_INTERNAL_BASE_URL}/low_code/release?id=${id}`,
+    `${API_INTERNAL_BASE_URL}/low_code/public/pages/${id}`,
     {
       cache: "no-store",
     }

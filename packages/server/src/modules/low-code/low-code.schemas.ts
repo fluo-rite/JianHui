@@ -1,6 +1,6 @@
 import type {
   GetQuestionDataByIdRequest,
-  PostQuestionDataRequest,
+  TPageStatus,
   UpdatePageRequest,
 } from "@lowcode/share";
 import {
@@ -40,6 +40,23 @@ export function parsePageId(value: unknown) {
   return ensureNumber(value, "page_id 参数错误");
 }
 
+export function parseComponentId(value: unknown) {
+  return ensureNumber(value, "组件 id 错误");
+}
+
+export function parsePageStatusBody(body: unknown): { status: TPageStatus } {
+  const values = ensureObject(body, "请求参数错误");
+  const status = ensureString(values.status, "status 参数错误");
+
+  if (!["published", "closed"].includes(status)) {
+    throw new HttpError(400, "status 仅支持 published 或 closed");
+  }
+
+  return {
+    status: status as TPageStatus,
+  };
+}
+
 export function parseUpdatePageBody(body: unknown): UpdatePageRequest {
   const values = ensureObject(body, "请求参数错误");
   if (!Array.isArray(values.components)) {
@@ -67,14 +84,18 @@ export function parseUpdatePageBody(body: unknown): UpdatePageRequest {
 
 export function parseQuestionDataBody(
   body: unknown
-): PostQuestionDataRequest {
+): {
+  props: {
+    id: number;
+    value: string | string[];
+  }[];
+} {
   const values = ensureObject(body, "请求参数错误");
   if (!Array.isArray(values.props)) {
     throw new HttpError(400, "props 必须是数组");
   }
 
   return {
-    page_id: ensureNumber(values.page_id, "page_id 参数错误"),
     props: values.props.map((item) => {
       const record = ensureObject(item, "问卷数据格式错误");
       return {
@@ -89,12 +110,12 @@ export function parseQuestionDataBody(
   };
 }
 
-export function parsePageAndComponentBody(
-  body: unknown
-): GetQuestionDataByIdRequest {
-  const values = ensureObject(body, "请求参数错误");
+export function parseQuestionComponentSubmissionParams(
+  pageId: unknown,
+  componentId: unknown
+): GetQuestionDataByIdRequest & { page_id: number } {
   return {
-    id: ensureNumber(values.id, "组件 id 错误"),
-    page_id: ensureNumber(values.page_id, "page_id 参数错误"),
+    id: parseComponentId(componentId),
+    page_id: parsePageId(pageId),
   };
 }

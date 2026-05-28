@@ -5,8 +5,10 @@ import { getRequestIp, getRequestUserAgent } from "../../utils/request-user";
 import type { TCurrentUser } from "../../utils/request-user";
 import { getSecret } from "../../utils/secret";
 import {
-  parsePageAndComponentBody,
+  parseComponentId,
   parsePageId,
+  parsePageStatusBody,
+  parseQuestionComponentSubmissionParams,
   parseQuestionDataBody,
   parseUpdatePageBody,
 } from "./low-code.schemas";
@@ -29,7 +31,10 @@ export function createLowCodeRouter(
     "/pages",
     authMiddleware,
     asyncHandler(async (req, res) => {
-      sendSuccess(res, await lowCodeService.createPage(requireCurrentUser(req.currentUser)));
+      sendSuccess(
+        res,
+        await lowCodeService.createPage(requireCurrentUser(req.currentUser))
+      );
     })
   );
 
@@ -37,7 +42,10 @@ export function createLowCodeRouter(
     "/pages",
     authMiddleware,
     asyncHandler(async (req, res) => {
-      sendSuccess(res, await lowCodeService.getPages(requireCurrentUser(req.currentUser)));
+      sendSuccess(
+        res,
+        await lowCodeService.getPages(requireCurrentUser(req.currentUser))
+      );
     })
   );
 
@@ -70,45 +78,28 @@ export function createLowCodeRouter(
     })
   );
 
-  router.post(
-    "/pages/:id/publish",
+  router.patch(
+    "/pages/:id/status",
     authMiddleware,
     asyncHandler(async (req, res) => {
-      sendSuccess(
-        res,
-        await lowCodeService.publishPage(
-          parsePageId(req.params.id),
-          requireCurrentUser(req.currentUser)
-        )
-      );
-    })
-  );
+      const pageId = parsePageId(req.params.id);
+      const { status } = parsePageStatusBody(req.body);
+      const currentUser = requireCurrentUser(req.currentUser);
 
-  router.post(
-    "/pages/:id/close",
-    authMiddleware,
-    asyncHandler(async (req, res) => {
-      sendSuccess(
-        res,
-        await lowCodeService.closePage(
-          parsePageId(req.params.id),
-          requireCurrentUser(req.currentUser)
-        )
-      );
-    })
-  );
+      const result =
+        status === "closed"
+          ? await lowCodeService.closePage(pageId, currentUser)
+          : await lowCodeService.getPageDetail(pageId, currentUser).then((page) => {
+              if (page.status === "closed") {
+                return lowCodeService.reopenPage(pageId, currentUser);
+              }
+              if (page.status === "draft") {
+                return lowCodeService.publishPage(pageId, currentUser);
+              }
+              return { msg: "页面已发布" };
+            });
 
-  router.post(
-    "/pages/:id/reopen",
-    authMiddleware,
-    asyncHandler(async (req, res) => {
-      sendSuccess(
-        res,
-        await lowCodeService.reopenPage(
-          parsePageId(req.params.id),
-          requireCurrentUser(req.currentUser)
-        )
-      );
+      sendSuccess(res, result);
     })
   );
 
@@ -127,70 +118,86 @@ export function createLowCodeRouter(
   );
 
   router.get(
-    "/release",
+    "/public/pages/:pageId",
     asyncHandler(async (req, res) => {
-      sendSuccess(res, await lowCodeService.getPublicReleaseData(parsePageId(req.query.id)));
+      sendSuccess(
+        res,
+        await lowCodeService.getPublicReleaseData(parsePageId(req.params.pageId))
+      );
     })
   );
 
   router.get(
-    "/is_question_data_posted",
+    "/public/pages/:pageId/submission",
     asyncHandler(async (req, res) => {
-      const key = getSecret(`${getRequestIp(req)}${String(getRequestUserAgent(req))}`);
-      sendSuccess(
-        res,
-        await lowCodeService.isQuestionDataPosted(key, parsePageId(req.query.page_id))
+      const key = getSecret(
+        `${getRequestIp(req)}${String(getRequestUserAgent(req))}`
       );
+      sendSuccess(res, {
+        submitted: await lowCodeService.isQuestionDataPosted(
+          key,
+          parsePageId(req.params.pageId)
+        ),
+      });
     })
   );
 
   router.post(
-    "/question_data",
+    "/public/pages/:pageId/submissions",
     asyncHandler(async (req, res) => {
-      const key = getSecret(`${getRequestIp(req)}${String(getRequestUserAgent(req))}`);
+      const key = getSecret(
+        `${getRequestIp(req)}${String(getRequestUserAgent(req))}`
+      );
       sendSuccess(
         res,
-        await lowCodeService.postQuestionData(parseQuestionDataBody(req.body), key)
+        await lowCodeService.postQuestionData(
+          parsePageId(req.params.pageId),
+          parseQuestionDataBody(req.body),
+          key
+        )
       );
     })
   );
 
   router.get(
-    "/question_components",
+    "/pages/:pageId/question-components",
     authMiddleware,
     asyncHandler(async (req, res) => {
       sendSuccess(
         res,
         await lowCodeService.getQuestionComponents(
           requireCurrentUser(req.currentUser),
-          parsePageId(req.query.page_id)
+          parsePageId(req.params.pageId)
         )
       );
     })
   );
 
   router.get(
-    "/question_data",
+    "/pages/:pageId/submissions",
     authMiddleware,
     asyncHandler(async (req, res) => {
       sendSuccess(
         res,
         await lowCodeService.getQuestionData(
           requireCurrentUser(req.currentUser).id,
-          parsePageId(req.query.page_id)
+          parsePageId(req.params.pageId)
         )
       );
     })
   );
 
-  router.post(
-    "/get_question_data_by_id",
+  router.get(
+    "/pages/:pageId/question-components/:componentId/submissions",
     authMiddleware,
     asyncHandler(async (req, res) => {
       sendSuccess(
         res,
         await lowCodeService.getQuestionDataByIdRequest({
-          ...parsePageAndComponentBody(req.body),
+          ...parseQuestionComponentSubmissionParams(
+            req.params.pageId,
+            req.params.componentId
+          ),
           userId: requireCurrentUser(req.currentUser).id,
         })
       );

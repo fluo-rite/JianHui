@@ -13,12 +13,10 @@ import { useRequest } from "ahooks";
 import { Button, Card, List, Space, Tag, Typography, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import {
-  closePage,
   createPage,
   deletePage,
   getPages,
-  publishPage,
-  reopenPage,
+  updatePageStatus,
 } from "~/api/low-code";
 
 const { Text } = Typography;
@@ -57,15 +55,13 @@ export default function Pages() {
   const { runAsync: execCreate, loading: creating } = useRequest(createPage, {
     manual: true,
   });
-  const { runAsync: execPublish, loading: publishing } = useRequest(publishPage, {
-    manual: true,
-  });
-  const { runAsync: execClose, loading: closing } = useRequest(closePage, {
-    manual: true,
-  });
-  const { runAsync: execReopen, loading: reopening } = useRequest(reopenPage, {
-    manual: true,
-  });
+  const { runAsync: execUpdateStatus, loading: updatingStatus } = useRequest(
+    ({ id, status }: { id: number; status: "published" | "closed" }) =>
+      updatePageStatus(id, status),
+    {
+      manual: true,
+    }
+  );
   const { runAsync: execDelete, loading: deleting } = useRequest(deletePage, {
     manual: true,
   });
@@ -76,17 +72,17 @@ export default function Pages() {
   }
 
   async function handlePublish(pageId: number) {
-    await execPublish(pageId);
+    await execUpdateStatus({ id: pageId, status: "published" });
     refreshPages();
   }
 
   async function handleClose(pageId: number) {
-    await execClose(pageId);
+    await execUpdateStatus({ id: pageId, status: "closed" });
     refreshPages();
   }
 
   async function handleReopen(pageId: number) {
-    await execReopen(pageId);
+    await execUpdateStatus({ id: pageId, status: "published" });
     refreshPages();
   }
 
@@ -152,7 +148,7 @@ export default function Pages() {
                           type="primary"
                           icon={<SendOutlined />}
                           onClick={() => handlePublish(item.id)}
-                          loading={publishing}
+                          loading={updatingStatus}
                         >
                           发布
                         </Button>
@@ -176,7 +172,7 @@ export default function Pages() {
                         <Button
                           icon={<EyeInvisibleOutlined />}
                           onClick={() => handleClose(item.id)}
-                          loading={closing}
+                          loading={updatingStatus}
                         >
                           关闭
                         </Button>
@@ -194,7 +190,7 @@ export default function Pages() {
                         <Button
                           icon={<UnlockOutlined />}
                           onClick={() => handleReopen(item.id)}
-                          loading={reopening}
+                          loading={updatingStatus}
                         >
                           重新打开
                         </Button>

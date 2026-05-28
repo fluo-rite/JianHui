@@ -2,7 +2,7 @@ import type { IComponent } from "@lowcode/share";
 import { useRequest } from "ahooks";
 import { useEffect, useMemo, useState } from "react";
 import ReactECharts from "echarts-for-react";
-import { getQuestionDataByTypeRequest } from "~/api/low-code";
+import { getQuestionComponentSubmissions } from "~/api/low-code";
 import { useStorePage } from "../../hooks/useStorePage";
 
 interface DataSourceProps {
@@ -48,11 +48,7 @@ export default function DataSource({
   );
 
   const { run: execGetQuestionData } = useRequest(
-    () =>
-      getQuestionDataByTypeRequest({
-        id: currentSelected!.id,
-        page_id: pageId,
-      }),
+    () => getQuestionComponentSubmissions(pageId, currentSelected!.id),
     {
       manual: true,
       onSuccess: ({ data }) => {
@@ -96,7 +92,7 @@ export default function DataSource({
         {currentData.flat().map((item, index) => {
           return (
             <span key={index}>
-              填写: {item} <br />
+              填写：{item} <br />
             </span>
           );
         })}
@@ -105,7 +101,7 @@ export default function DataSource({
   }
 
   const itemTitle = useMemo(
-    () => currentSelected?.options.title ?? "默认展示的标题",
+    () => currentSelected?.options.title ?? "默认显示的标题",
     [currentSelected]
   );
 
