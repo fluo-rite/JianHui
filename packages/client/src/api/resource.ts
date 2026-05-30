@@ -10,6 +10,20 @@ export interface DirectUploadInitPayload {
 
 export type MultipartUploadInitPayload = DirectUploadInitPayload;
 
+export interface DirectUploadInitResponse {
+  objectKey: string;
+  uploadUrl: string;
+  expiresIn: number;
+  contentType?: string;
+}
+
+export interface MultipartUploadInitResponse {
+  objectKey: string;
+  uploadId: string;
+  partSize: number;
+  totalParts: number;
+}
+
 export interface CompleteDirectUploadPayload {
   mode: "direct";
   objectKey: string;
@@ -30,17 +44,20 @@ export interface CompleteMultipartUploadPayload {
 }
 
 export async function initDirectUpload(data: DirectUploadInitPayload) {
-  return request("/resources/uploads/direct/init", {
+  return request<DirectUploadInitResponse>("/resources/uploads/direct/init", {
     data,
     method: "POST",
   });
 }
 
 export async function initMultipartUpload(data: MultipartUploadInitPayload) {
-  return request("/resources/uploads/multipart/init", {
-    data,
-    method: "POST",
-  });
+  return request<MultipartUploadInitResponse>(
+    "/resources/uploads/multipart/init",
+    {
+      data,
+      method: "POST",
+    }
+  );
 }
 
 export async function getMultipartPartUploadUrl(data: {
@@ -48,7 +65,11 @@ export async function getMultipartPartUploadUrl(data: {
   uploadId: string;
   partNumber: number;
 }) {
-  return request("/resources/uploads/multipart/part-url", {
+  return request<{
+    partNumber: number;
+    uploadUrl: string;
+    expiresIn: number;
+  }>("/resources/uploads/multipart/part-url", {
     data,
     method: "POST",
   });
