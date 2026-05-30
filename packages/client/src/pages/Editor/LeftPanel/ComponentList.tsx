@@ -8,6 +8,7 @@ import {
   FontSizeOutlined,
   FormOutlined,
   FundViewOutlined,
+  InfoCircleOutlined,
   MinusOutlined,
   PlaySquareOutlined,
   QrcodeOutlined,
@@ -17,9 +18,9 @@ import {
 } from "@ant-design/icons";
 import { Divider } from "antd";
 import type { FC, ReactNode } from "react";
+import type { TComponentTypes } from "@lowcode/share";
 import { useStoreComponents } from "~/hooks";
 
-// 不同组件配置数组
 export const components = [
   {
     type: "video",
@@ -78,7 +79,6 @@ export const components = [
   },
 ];
 
-// 不同输入型组件配置数组
 const componentByUserInput = [
   {
     type: "input",
@@ -105,21 +105,21 @@ const componentByUserInput = [
 interface ComponentProps {
   name: string;
   icon: ReactNode;
-  type: string;
+  type: TComponentTypes;
 }
 
-// 公共样式组件
 const EditorComponent: FC<ComponentProps> = ({ icon, name, type }) => {
   const store = useStoreComponents();
-  // 将要展示的组件类型告诉 store
-  function handleClick() {
-    // @ts-ignore
+
+  function handleDoubleClick() {
     store.push(type);
   }
+
   return (
     <div
-      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       className="border py-2 pl-2 w-full flex items-center gap-1 text-xs cursor-pointer select-none hover:border-blue-500"
+      title="双击添加到画布"
     >
       {icon}
       <span>{name}</span>
@@ -127,16 +127,27 @@ const EditorComponent: FC<ComponentProps> = ({ icon, name, type }) => {
   );
 };
 
-// 不同组件列表
 export default function ComponentList() {
   return (
-    <div>
+    <div className="space-y-4">
+      <div className="rounded border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+        <div className="flex items-center gap-1 font-medium">
+          <InfoCircleOutlined />
+          <span>使用提示</span>
+        </div>
+        <div className="mt-1 leading-5">
+          双击左侧组件可添加到画布中，添加后可在中间画布里拖拽调整顺序。
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 items-center gap-2">
         {components.map((item, index) => (
           <EditorComponent {...item} key={index} />
         ))}
       </div>
+
       <Divider />
+
       <div className="grid grid-cols-2 items-center gap-2">
         {componentByUserInput.map((item, index) => (
           <EditorComponent {...item} key={index} />

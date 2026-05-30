@@ -11,9 +11,6 @@ export default function EditorLeftPanel() {
           <AppstoreOutlined /> <span>组件列表</span>
         </>
       ),
-      /**
-       * 不同组件列表
-       */
       children: <ComponentList />,
     },
   ];

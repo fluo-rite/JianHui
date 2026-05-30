@@ -19,7 +19,8 @@ import {
   DeleteOutlined,
 } from "@ant-design/icons";
 import { useRequest } from "ahooks";
-import { deleteResource, getResources, uploadFile } from "~/api/resource";
+import { deleteResource, getResources } from "~/api/resource";
+import { uploadResource } from "~/utils/resource-upload";
 
 interface IFormPropLabelProps extends FormItemProps {
   hidden?: boolean;
@@ -250,11 +251,12 @@ export const UploadComponent: FC<UploadComponentProps> = ({
   onChooise,
 }) => {
   const uploadRef = useRef<HTMLInputElement>(null);
-
   const iconClassName = "text-3xl text-center block";
   const typeName = type === "image" ? "图片" : "视频";
 
   const [resources, setResources] = useState<IResources[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const { run: execGetResources, loading: loadingWithGetResources } =
     useRequest(async () => await getResources(type), {
@@ -263,16 +265,6 @@ export const UploadComponent: FC<UploadComponentProps> = ({
         setResources(data);
       },
     });
-
-  const { run: execUpload, loading: loadingWithUpload } = useRequest(
-    async (formData: FormData) => await uploadFile(formData),
-    {
-      manual: true,
-      onSuccess: () => {
-        execGetResources();
-      },
-    }
-  );
 
   useEffect(() => {
     if (visible) {
@@ -284,12 +276,27 @@ export const UploadComponent: FC<UploadComponentProps> = ({
     const files = uploadRef.current?.files;
     if (!files) return;
 
-    const formData = new FormData();
-    formData.append("type", type);
-    formData.append("file", files[0]);
-
-    execUpload(formData);
+    const file = files[0];
     uploadRef.current.value = "";
+
+    setUploading(true);
+    setUploadProgress(type === "video" ? 0 : null);
+
+    try {
+      await uploadResource(file, type, {
+        onProgress: (percent) => {
+          setUploadProgress(percent);
+        },
+      });
+      await execGetResources();
+    } catch (error) {
+      const messageText =
+        error instanceof Error ? error.message : "上传失败，请稍后重试";
+      message.warning(messageText);
+    } finally {
+      setUploading(false);
+      setTimeout(() => setUploadProgress(null), 600);
+    }
   };
 
   function getVideoFirstFrameOrImage(url: string, resourceType: UploadType) {
@@ -311,19 +318,23 @@ export const UploadComponent: FC<UploadComponentProps> = ({
       ) : (
         <div className="grid grid-cols-3 grid-rows-3 gap-x-4 gap-y-10 mt-6">
           <div
-            onClick={() => uploadRef.current?.click()}
+            onClick={() => !uploading && uploadRef.current?.click()}
             className={`cursor-pointer text-gray-600 border select-none hover:border-dashed flex flex-col justify-center items-center ${
               resources.length <= 0 && "py-4"
-            } ${"opacity-50 cursor-not-allowed"}`}
+            } ${uploading ? "opacity-50 cursor-not-allowed" : ""}`}
           >
-            {loadingWithUpload ? (
+            {uploading ? (
               <LoadingOutlined className={iconClassName} />
             ) : (
               <CloudUploadOutlined className={iconClassName} />
             )}
 
             <span className="block text-center py-2 font-mono font-bold">
-              {typeName}上传
+              {uploading
+                ? type === "video" && uploadProgress != null
+                  ? `${typeName}上传 ${uploadProgress}%`
+                  : `${typeName}上传中`
+                : `${typeName}上传`}
             </span>
 
             <input

@@ -1,21 +1,24 @@
-import { Buffer } from 'node:buffer';
-import { unlinkSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { extname } from 'node:path';
 import AliOss = require('ali-oss');
 import type { Options as AliOssOptions } from 'ali-oss';
 import { env } from './env';
 import { HttpError } from '../utils/http';
+
+const DIRECT_UPLOAD_EXPIRES_IN_SECONDS = 60 * 10;
+const MULTIPART_PART_UPLOAD_EXPIRES_IN_SECONDS = 60 * 60;
 
 const aliOssOptions: AliOssOptions = {
   region: env.aliOssRegion,
   accessKeyId: env.aliOssAccessKeyId,
   accessKeySecret: env.aliOssAccessKeySecret,
   bucket: env.aliOssBucket,
+  authorizationV4: true,
+  secure: true,
 };
 
-const ossHostRegex = new RegExp(
-  `http[s]?:\\/\\/(?:${env.aliOssBucket})\\.(?:${env.aliOssRegion})(?:\\.aliyuncs\\.com)`,
-);
+function sanitizeExtension(filename: string) {
+  return extname(filename).replace(/[^.\w-]/g, '').toLowerCase();
+}
 
 export class AliOssService {
   private client: AliOss;
@@ -24,36 +27,112 @@ export class AliOssService {
     this.client = new AliOss(options);
   }
 
-  async uploadToAliOss(file: Express.Multer.File) {
-    const name = Buffer.from(file.originalname, 'latin1').toString('utf8');
-    const baseName = name.split('.').slice(0, -1).join('.') || name.split('.')[0];
-    const extension = name.split('.').pop();
-    const objectPath = `upload_files/${baseName}-${Date.now()}.${extension}`;
-    const localPath = resolve(env.uploadTempDir, file.filename);
+  createObjectKey(accountId: number, type: string, filename: string) {
+    const extension = sanitizeExtension(filename);
+    const date = new Date().toISOString().slice(0, 10);
+    const random = `${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+    return `upload_files/${accountId}/${type}/${date}/${random}${extension}`;
+  }
 
-    const { url, res } = await this.client.put(objectPath, localPath).finally(() => {
-      unlinkSync(localPath);
-    });
+  getObjectPrefix(accountId: number, type?: string) {
+    const typeSegment = type ? `${type}/` : '';
+    return `upload_files/${accountId}/${typeSegment}`;
+  }
 
-    if (res.status === 200 && url) {
-      return env.aliOssCustomDomain
-        ? url.replace(ossHostRegex, env.aliOssCustomDomain)
-        : url;
+  getPublicUrl(objectKey: string) {
+    const encodedObjectKey = objectKey
+      .split('/')
+      .map((segment) => encodeURIComponent(segment))
+      .join('/');
+    const origin = env.aliOssCustomDomain
+      ? env.aliOssCustomDomain
+      : `https://${env.aliOssBucket}.${env.aliOssRegion}.aliyuncs.com`;
+    return `${origin.replace(/\/$/, '')}/${encodedObjectKey}`;
+  }
+
+  async createDirectUploadUrl(objectKey: string) {
+    const uploadUrl = await this.client.signatureUrlV4(
+      'PUT',
+      DIRECT_UPLOAD_EXPIRES_IN_SECONDS,
+      { headers: {} },
+      objectKey,
+    );
+
+    return {
+      objectKey,
+      uploadUrl,
+      expiresIn: DIRECT_UPLOAD_EXPIRES_IN_SECONDS,
+    };
+  }
+
+  async initMultipartUpload(objectKey: string) {
+    const result = await this.client.initMultipartUpload(objectKey);
+    return {
+      objectKey,
+      uploadId: result.uploadId,
+    };
+  }
+
+  async createMultipartPartUploadUrl(
+    objectKey: string,
+    uploadId: string,
+    partNumber: number,
+  ) {
+    const uploadUrl = await this.client.signatureUrlV4(
+      'PUT',
+      MULTIPART_PART_UPLOAD_EXPIRES_IN_SECONDS,
+      {
+        queries: {
+          partNumber: String(partNumber),
+          uploadId,
+        },
+        headers: {},
+      },
+      objectKey,
+    );
+
+    return {
+      partNumber,
+      uploadUrl,
+      expiresIn: MULTIPART_PART_UPLOAD_EXPIRES_IN_SECONDS,
+    };
+  }
+
+  async completeMultipartUpload(
+    objectKey: string,
+    uploadId: string,
+    parts: Array<{ partNumber: number; etag: string }>,
+  ) {
+    const sortedParts = parts
+      .map((item) => ({
+        number: item.partNumber,
+        etag: item.etag,
+      }))
+      .sort((a, b) => a.number - b.number);
+
+    return this.client.completeMultipartUpload(objectKey, uploadId, sortedParts);
+  }
+
+  async abortMultipartUpload(objectKey: string, uploadId: string) {
+    await this.client.abortMultipartUpload(objectKey, uploadId);
+  }
+
+  async headObject(objectKey: string) {
+    return this.client.head(objectKey);
+  }
+
+  async deleteObject(objectKey: string) {
+    const { res } = await this.client.delete(objectKey);
+    if (res.status !== 204) {
+      throw new HttpError(400, '删除失败，请重试');
     }
-
-    throw new HttpError(400, '上传失败, 请重试');
   }
 
   async deleteFromAliOss(url: string) {
     const objectName = decodeURI(
       env.aliOssCustomDomain ? url.replace(env.aliOssCustomDomain, '') : url,
-    );
-    const { res } = await this.client.delete(objectName);
+    ).replace(/^\//, '');
 
-    if (res.status === 204) {
-      return;
-    }
-
-    throw new HttpError(400, '删除失败，请重试');
+    await this.deleteObject(objectName);
   }
 }
