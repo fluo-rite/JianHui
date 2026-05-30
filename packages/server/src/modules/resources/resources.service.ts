@@ -99,7 +99,10 @@ export class ResourcesService {
       input.filename,
     );
 
-    return this.aliOssService.createDirectUploadUrl(objectKey);
+    return this.aliOssService.createDirectUploadUrl(
+      objectKey,
+      input.contentType,
+    );
   }
 
   async initMultipartUpload(input: {

@@ -8,7 +8,6 @@ import {
   FontSizeOutlined,
   FormOutlined,
   FundViewOutlined,
-  InfoCircleOutlined,
   MinusOutlined,
   PlaySquareOutlined,
   QrcodeOutlined,
@@ -130,16 +129,6 @@ const EditorComponent: FC<ComponentProps> = ({ icon, name, type }) => {
 export default function ComponentList() {
   return (
     <div className="space-y-4">
-      <div className="rounded border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
-        <div className="flex items-center gap-1 font-medium">
-          <InfoCircleOutlined />
-          <span>使用提示</span>
-        </div>
-        <div className="mt-1 leading-5">
-          双击左侧组件可添加到画布中，添加后可在中间画布里拖拽调整顺序。
-        </div>
-      </div>
-
       <div className="grid grid-cols-2 items-center gap-2">
         {components.map((item, index) => (
           <EditorComponent {...item} key={index} />

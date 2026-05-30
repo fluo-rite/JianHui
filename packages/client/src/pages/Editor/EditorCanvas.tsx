@@ -261,13 +261,12 @@ const EditorCanvas: FC<{
 
   return (
     <>
-      <div className="mb-3 rounded border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-        <div className="flex items-center gap-1 font-medium">
-          <InfoCircleOutlined />
-          <span>画布提示</span>
-        </div>
-        <div className="mt-1 leading-5">
-          左侧组件需要双击添加到画布，画布中的组件可直接拖拽来调整排序。
+      <div className="mb-3 rounded border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+        <div className="flex items-start gap-1 leading-5">
+          <InfoCircleOutlined className="mt-0.5" />
+          <span>
+            双击左侧组件可添加到画布中，添加后可在中间画布里拖拽调整顺序。
+          </span>
         </div>
       </div>
 

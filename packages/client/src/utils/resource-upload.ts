@@ -22,14 +22,43 @@ function sleep(ms: number) {
   });
 }
 
-async function putFileToSignedUrl(url: string, blob: Blob) {
+function parseOssErrorMessage(errorBody: string, fallback: string) {
+  const codeMatch = errorBody.match(/<Code>([^<]+)<\/Code>/i);
+  const messageMatch = errorBody.match(/<Message>([^<]+)<\/Message>/i);
+
+  if (!codeMatch && !messageMatch) {
+    return fallback;
+  }
+
+  const code = codeMatch?.[1]?.trim();
+  const message = messageMatch?.[1]?.trim();
+
+  if (code && message) {
+    return `${fallback}（${code}: ${message}）`;
+  }
+
+  return `${fallback}（${code || message}）`;
+}
+
+async function putFileToSignedUrl(
+  url: string,
+  blob: Blob,
+  contentType?: string
+) {
   const response = await fetch(url, {
     method: "PUT",
+    headers: contentType
+      ? {
+          "Content-Type": contentType,
+        }
+      : undefined,
     body: blob,
   });
 
   if (!response.ok) {
-    throw new Error(`上传失败，状态码：${response.status}`);
+    const errorBody = await response.text().catch(() => "");
+    const fallback = `上传失败，状态码：${response.status}`;
+    throw new Error(parseOssErrorMessage(errorBody, fallback));
   }
 
   return response.headers.get("ETag");
@@ -112,7 +141,11 @@ async function uploadDirectResource(
   });
 
   options?.onProgress?.(null);
-  await putFileToSignedUrl(initResponse.data.uploadUrl, file);
+  await putFileToSignedUrl(
+    initResponse.data.uploadUrl,
+    file,
+    initResponse.data.contentType
+  );
   await completeUpload({
     mode: "direct",
     objectKey: initResponse.data.objectKey,

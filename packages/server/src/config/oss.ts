@@ -50,11 +50,17 @@ export class AliOssService {
     return `${origin.replace(/\/$/, '')}/${encodedObjectKey}`;
   }
 
-  async createDirectUploadUrl(objectKey: string) {
+  async createDirectUploadUrl(objectKey: string, contentType?: string) {
+    const headers = contentType
+      ? {
+          'Content-Type': contentType,
+        }
+      : {};
+
     const uploadUrl = await this.client.signatureUrlV4(
       'PUT',
       DIRECT_UPLOAD_EXPIRES_IN_SECONDS,
-      { headers: {} },
+      { headers },
       objectKey,
     );
 
@@ -62,6 +68,7 @@ export class AliOssService {
       objectKey,
       uploadUrl,
       expiresIn: DIRECT_UPLOAD_EXPIRES_IN_SECONDS,
+      contentType,
     };
   }
 

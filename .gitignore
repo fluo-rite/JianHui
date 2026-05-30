@@ -3,5 +3,6 @@ dist
 .env
 test
 docs
+temp
 src-nest-legacy
 .DS_Store
