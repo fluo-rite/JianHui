@@ -18,12 +18,7 @@ import SortableContainer from "~/components/DragSortable/SortableContainer";
 import SortableItem from "~/components/DragSortable/SortableItem";
 import type { DragStartEvent } from "@dnd-kit/core";
 import { components } from "./LeftPanel/ComponentList";
-import {
-  DeleteOutlined,
-  DownOutlined,
-  InfoCircleOutlined,
-  UpOutlined,
-} from "@ant-design/icons";
+import { DeleteOutlined, DownOutlined, UpOutlined } from "@ant-design/icons";
 
 export interface EditorCanvasHandle {
   setShowToolbar: (value: boolean) => void;

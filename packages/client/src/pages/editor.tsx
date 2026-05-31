@@ -1,4 +1,5 @@
 import { useRequest, useTitle } from "ahooks";
+import { InfoCircleOutlined } from "@ant-design/icons";
 import { message, Spin } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -100,7 +101,15 @@ function Editor() {
         <div className="w-80 bg-white px-4 overflow-y-auto">
           <EditorLeftPanel />
         </div>
-        <div className="flex-auto flex items-center justify-center">
+        <div className="flex-auto flex flex-col items-center justify-center gap-3">
+          <div className="w-[380px] rounded border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+            <div className="flex items-start gap-1 leading-5">
+              <InfoCircleOutlined className="mt-0.5" />
+              <span>
+                双击左侧组件可添加到画布中，添加后可在中间画布里拖拽调整顺序。
+              </span>
+            </div>
+          </div>
           <div
             ref={canvasContainerRef}
             className="editor-canvas-container w-[380px] h-[700px] bg-white text-left overflow-y-auto overflow-x-hidden"
