@@ -1,5 +1,4 @@
 import { useRequest, useTitle } from "ahooks";
-import { InfoCircleOutlined } from "@ant-design/icons";
 import { message, Spin } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -23,7 +22,6 @@ function Editor() {
 
   const canvasRef = useRef<EditorCanvasHandle>();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
-
   const [scrolling, setScrolling] = useState(false);
 
   const { loading } = useRequest(
@@ -93,31 +91,26 @@ function Editor() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#f1f2f4]">
-      <header className="shadow-sm p-4 bg-white">
+    <div className="flex h-full flex-col bg-[#f1f2f4]">
+      <header className="bg-white p-4 shadow-sm">
         <EditorHeader />
       </header>
-      <main className="flex flex-1 border overflow-x-hidden">
-        <div className="w-80 bg-white px-4 overflow-y-auto">
+      <main className="flex flex-1 overflow-x-hidden border">
+        <div className="w-80 overflow-y-auto bg-white px-4">
           <EditorLeftPanel />
         </div>
-        <div className="flex-auto flex flex-col items-center justify-center gap-3">
-          <div className="w-[380px] rounded border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
-            <div className="flex items-start gap-1 leading-5">
-              <InfoCircleOutlined className="mt-0.5" />
-              <span>
-                双击左侧组件可添加到画布中，添加后可在中间画布里拖拽调整顺序。
-              </span>
-            </div>
+        <div className="flex flex-auto flex-col items-center justify-center gap-3">
+          <div className="w-[380px] rounded border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-700">
+            双击左侧组件可添加到画布中，添加后可在中间画布里拖拽调整顺序。
           </div>
           <div
             ref={canvasContainerRef}
-            className="editor-canvas-container w-[380px] h-[700px] bg-white text-left overflow-y-auto overflow-x-hidden"
+            className="editor-canvas-container h-[700px] w-[380px] overflow-x-hidden overflow-y-auto bg-white text-left"
           >
             <EditorCanvas store={storeComps} onRef={canvasRef} />
           </div>
         </div>
-        <div className="w-80 bg-white px-4 overflow-y-auto">
+        <div className="w-80 overflow-y-auto bg-white px-4">
           <EditorRightPanel />
         </div>
       </main>
