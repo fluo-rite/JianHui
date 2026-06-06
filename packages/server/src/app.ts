@@ -6,9 +6,10 @@ import { AliOssService } from './config/oss';
 import { createAuthMiddleware } from './middlewares/auth';
 import { errorHandler, notFoundHandler } from './middlewares/error-handler';
 import { Component } from './entities/component.entity';
-import { ComponentData } from './entities/component-data.entity';
 import { Page } from './entities/page.entity';
 import { Resources } from './entities/resources.entity';
+import { SubmissionAnswer } from './entities/submission-answer.entity';
+import { Submission } from './entities/submission.entity';
 import { User } from './entities/user.entity';
 import { createLowCodeRouter } from './modules/low-code/low-code.routes';
 import { LowCodeService } from './modules/low-code/low-code.service';
@@ -45,7 +46,8 @@ export async function createApp(): Promise<{
     dataSource,
     dataSource.getRepository(Page),
     dataSource.getRepository(Component),
-    dataSource.getRepository(ComponentData),
+    dataSource.getRepository(Submission),
+    dataSource.getRepository(SubmissionAnswer),
   );
   const resourcesService = new ResourcesService(
     new AliOssService(),

@@ -1,5 +1,6 @@
 import type {
   GetQuestionDataByIdRequest,
+  PostQuestionDataRequest,
   TPageStatus,
   UpdatePageRequest,
 } from "@lowcode/share";
@@ -14,15 +15,17 @@ import {
   ensureString,
 } from "../../utils/http";
 
+interface SubmissionCursor {
+  createdAt: string;
+  id: number;
+}
+
 function validatePageOptions(
   type: UpdatePageRequest["components"][number]["type"],
   options: unknown,
   index: number
 ) {
-  const validationIssues = getComponentOptionsValidationIssues(
-    type,
-    options
-  );
+  const validationIssues = getComponentOptionsValidationIssues(type, options);
 
   if (validationIssues.length > 0) {
     const firstIssue = validationIssues[0];
@@ -82,14 +85,7 @@ export function parseUpdatePageBody(body: unknown): UpdatePageRequest {
   };
 }
 
-export function parseQuestionDataBody(
-  body: unknown
-): {
-  props: {
-    id: number;
-    value: string | string[];
-  }[];
-} {
+export function parseQuestionDataBody(body: unknown): PostQuestionDataRequest {
   const values = ensureObject(body, "请求参数错误");
   if (!Array.isArray(values.props)) {
     throw new HttpError(400, "props 必须是数组");
@@ -110,7 +106,60 @@ export function parseQuestionDataBody(
   };
 }
 
-export function parseQuestionComponentSubmissionParams(
+export function parseSubmissionRecordsQuery(query: unknown): {
+  limit: number;
+  cursor: SubmissionCursor | null;
+} {
+  const values = ensureObject(query ?? {}, "查询参数错误");
+  const limitValue = values.limit;
+  const cursorValue = values.cursor;
+
+  let limit = 50;
+  if (limitValue !== undefined) {
+    limit = ensureNumber(limitValue, "limit 参数错误");
+  }
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+    throw new HttpError(400, "limit 仅支持 1 到 100");
+  }
+
+  if (cursorValue == null || cursorValue === "") {
+    return {
+      limit,
+      cursor: null,
+    };
+  }
+
+  if (typeof cursorValue !== "string") {
+    throw new HttpError(400, "cursor 参数错误");
+  }
+
+  try {
+    const decoded = Buffer.from(cursorValue, "base64").toString("utf8");
+    const payload = ensureObject(JSON.parse(decoded), "cursor 参数错误");
+    const createdAt = ensureString(payload.createdAt, "cursor createdAt 参数错误");
+    const id = ensureNumber(payload.id, "cursor id 参数错误");
+
+    if (Number.isNaN(new Date(createdAt).getTime())) {
+      throw new HttpError(400, "cursor createdAt 参数错误");
+    }
+
+    return {
+      limit,
+      cursor: {
+        createdAt,
+        id,
+      },
+    };
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw error;
+    }
+
+    throw new HttpError(400, "cursor 参数错误");
+  }
+}
+
+export function parseQuestionDistributionParams(
   pageId: unknown,
   componentId: unknown
 ): GetQuestionDataByIdRequest & { page_id: number } {

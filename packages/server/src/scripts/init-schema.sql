@@ -1,5 +1,7 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS `submission_answer`;
+DROP TABLE IF EXISTS `submission`;
 DROP TABLE IF EXISTS `component_data`;
 DROP TABLE IF EXISTS `component`;
 DROP TABLE IF EXISTS `resources`;
@@ -48,15 +50,31 @@ CREATE TABLE `component` (
   CONSTRAINT `fk_component_page_id` FOREIGN KEY (`page_id`) REFERENCES `page` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `component_data` (
+CREATE TABLE `submission` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `page_id` INT NOT NULL,
-  `user` VARCHAR(255) NOT NULL,
-  `props` LONGTEXT NOT NULL,
+  `submitter_key` VARCHAR(255) NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_component_data_page_user` (`page_id`, `user`),
-  KEY `idx_component_data_page_id` (`page_id`),
-  CONSTRAINT `fk_component_data_page_id` FOREIGN KEY (`page_id`) REFERENCES `page` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  UNIQUE KEY `uq_submission_page_submitter` (`page_id`, `submitter_key`),
+  KEY `idx_submission_page_created` (`page_id`, `created_at`, `id`),
+  KEY `idx_submission_page_id` (`page_id`, `id`),
+  CONSTRAINT `fk_submission_page_id` FOREIGN KEY (`page_id`) REFERENCES `page` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `submission_answer` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `submission_id` INT NOT NULL,
+  `page_id` INT NOT NULL,
+  `component_id` INT NOT NULL,
+  `component_type` VARCHAR(64) NOT NULL,
+  `value_text` TEXT NULL,
+  `value_option_id` VARCHAR(64) NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_answer_submission_component` (`submission_id`, `component_id`),
+  KEY `idx_answer_page_component_option` (`page_id`, `component_id`, `value_option_id`),
+  KEY `idx_answer_page_submission` (`page_id`, `submission_id`),
+  CONSTRAINT `fk_submission_answer_submission_id` FOREIGN KEY (`submission_id`) REFERENCES `submission` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `resources` (

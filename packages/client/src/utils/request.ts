@@ -4,10 +4,10 @@ import { message } from "antd";
 import { authActions, store } from "~/store";
 
 export const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
-const request = axios.create({ baseURL: BASE_URL });
+export const requestClient = axios.create({ baseURL: BASE_URL });
 
 // 定义请求拦截器，统一携带 token
-request.interceptors.request.use((config) => {
+requestClient.interceptors.request.use((config) => {
   const token = store.getState().auth.token;
   if (token) {
     config.headers.Authorization = token;
@@ -16,7 +16,7 @@ request.interceptors.request.use((config) => {
 });
 
 // 定义响应拦截器，统一
-request.interceptors.response.use(
+requestClient.interceptors.response.use(
   (response) => {
     const data = response?.data;
     if (data.code === 0 && data.msg !== undefined) {
@@ -53,5 +53,5 @@ export default async function makeRequest(
   url: string,
   options?: AxiosRequestConfig
 ) {
-  return (await request({ url, ...options })).data;
+  return (await requestClient({ url, ...options })).data;
 }

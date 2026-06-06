@@ -15,13 +15,8 @@ export default function Statistics() {
   const params = useParams();
   const pageId = Number(params.pageId);
   const { replacePage } = useStorePage();
-  const [disable, setDisable] = useState(false);
   const [components, setComponents] = useState<IComponent[]>([]);
   const [currentSelected, setCurrentSelected] = useState<IComponent>();
-
-  function handleDisable() {
-    setDisable(true);
-  }
 
   const { loading } = useRequest(
     async () => {
@@ -62,7 +57,6 @@ export default function Statistics() {
         });
 
         if (questionComponents.length === 0) {
-          setDisable(true);
           message.warning("请先创建至少一个表单组件");
           return;
         }
@@ -86,8 +80,8 @@ export default function Statistics() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#f1f2f4]">
-      <header className="flex items-center shadow-sm px-10 py-4 bg-white">
+    <div className="flex min-h-screen flex-col bg-[#f1f2f4]">
+      <header className="flex items-center bg-white px-6 py-4 shadow-sm md:px-10">
         <div className="flex-1">
           简汇数据统计
           <LineChartOutlined />
@@ -107,25 +101,17 @@ export default function Statistics() {
         </div>
       </header>
 
-      <div
-        className={`${
-          disable ? "opacity-50 select-none pointer-events-none" : ""
-        } flex flex-1 p-4 flex-grow-[2] overflow-x-hidden overflow-y-auto`}
-      >
-        <div className="bg-white flex-1 mr-4">
-          <ComponentDatas
-            components={components}
-            handleDisable={handleDisable}
-            pageId={pageId}
-          />
+      <div className="flex flex-1 flex-col gap-4 p-4 xl:min-h-0 xl:flex-row">
+        <div className="min-w-0 rounded-2xl bg-white shadow-sm xl:flex-[1.6]">
+          <ComponentDatas components={components} pageId={pageId} />
         </div>
-        <div className="bg-white flex-[1] flex flex-col">
+        <div className="min-w-0 rounded-2xl bg-white shadow-sm xl:flex xl:min-h-0 xl:w-[420px] xl:min-w-[380px] xl:max-w-[480px] xl:flex-col">
           <ComponentSelect
             components={components}
             setCurrnetSelected={setCurrentSelected}
             currentSelected={currentSelected?.id ?? 0}
           />
-          <div className="w-full text-center">
+          <div className="min-h-[420px] border-t border-slate-100 xl:flex-1 xl:min-h-0">
             <DataSource currentSelected={currentSelected} pageId={pageId} />
           </div>
         </div>

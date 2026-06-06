@@ -8,8 +8,8 @@ import {
   parseComponentId,
   parsePageId,
   parsePageStatusBody,
-  parseQuestionComponentSubmissionParams,
   parseQuestionDataBody,
+  parseSubmissionRecordsQuery,
   parseUpdatePageBody,
 } from "./low-code.schemas";
 import { LowCodeService } from "./low-code.service";
@@ -174,32 +174,43 @@ export function createLowCodeRouter(
   );
 
   router.get(
-    "/pages/:pageId/submissions",
+    "/pages/:pageId/submission-records",
     authMiddleware,
     asyncHandler(async (req, res) => {
       sendSuccess(
         res,
-        await lowCodeService.getQuestionData(
-          requireCurrentUser(req.currentUser).id,
-          parsePageId(req.params.pageId)
+        await lowCodeService.getSubmissionRecords(
+          requireCurrentUser(req.currentUser),
+          parsePageId(req.params.pageId),
+          parseSubmissionRecordsQuery(req.query)
         )
       );
     })
   );
 
   router.get(
-    "/pages/:pageId/question-components/:componentId/submissions",
+    "/pages/:pageId/question-components/:componentId/distribution",
     authMiddleware,
     asyncHandler(async (req, res) => {
       sendSuccess(
         res,
-        await lowCodeService.getQuestionDataByIdRequest({
-          ...parseQuestionComponentSubmissionParams(
-            req.params.pageId,
-            req.params.componentId
-          ),
-          userId: requireCurrentUser(req.currentUser).id,
-        })
+        await lowCodeService.getQuestionDistribution(
+          requireCurrentUser(req.currentUser),
+          parsePageId(req.params.pageId),
+          parseComponentId(req.params.componentId)
+        )
+      );
+    })
+  );
+
+  router.get(
+    "/pages/:pageId/submissions/export.csv",
+    authMiddleware,
+    asyncHandler(async (req, res) => {
+      await lowCodeService.streamSubmissionCsv(
+        requireCurrentUser(req.currentUser),
+        parsePageId(req.params.pageId),
+        res
       );
     })
   );

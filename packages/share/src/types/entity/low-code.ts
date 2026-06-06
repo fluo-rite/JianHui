@@ -1,5 +1,11 @@
 import { TComponentTypes } from "../..";
 
+export type TQuestionComponentType =
+  | "input"
+  | "textArea"
+  | "radio"
+  | "checkbox";
+
 export type TPageStatus = "draft" | "published" | "closed";
 
 export interface ILowCode {
@@ -23,9 +29,19 @@ export interface IComponent {
   options: Record<string, any>;
 }
 
-export interface IComponentData {
+export interface ISubmission {
   id: number;
-  user: string;
   page_id: number;
-  props: Record<string, any>[];
+  submitter_key: string;
+  created_at: Date | string;
+}
+
+export interface ISubmissionAnswer {
+  id: number;
+  submission_id: number;
+  page_id: number;
+  component_id: number;
+  component_type: TQuestionComponentType;
+  value_text: string | null;
+  value_option_id: string | null;
 }

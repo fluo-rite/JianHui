@@ -59,5 +59,14 @@ export default function ComponentSelect({
     };
   });
 
-  return <Table dataSource={dataSource} columns={columns}></Table>;
+  return (
+    <div className="border-b border-slate-100 p-4">
+      <Table
+        dataSource={dataSource}
+        columns={columns}
+        pagination={false}
+        size="middle"
+      />
+    </div>
+  );
 }

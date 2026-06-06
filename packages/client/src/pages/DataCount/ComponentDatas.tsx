@@ -1,104 +1,132 @@
-import type { IComponent } from "@lowcode/share";
+import type { IComponent, SubmissionRecordItem } from "@lowcode/share";
 import { useRequest } from "ahooks";
-import { Button, Space, Table, message } from "antd";
+import { Button, Space, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useMemo, useState } from "react";
-import { getQuestionData } from "~/api/low-code";
-import { useStorePage } from "~/hooks";
-import { excelToZip, jsonToExcel } from "~/utils/excel";
+import { useEffect, useMemo, useState } from "react";
+import {
+  downloadSubmissionCsv,
+  getSubmissionRecords,
+} from "~/api/low-code";
+
+const PAGE_SIZE = 50;
+
+function formatDateTime(value: string) {
+  return new Date(value).toLocaleString();
+}
 
 export default function ComponentDatas(props: {
   components: IComponent[];
-  handleDisable: () => void;
   pageId: number;
 }) {
-  const [dataSource, setDataSource] = useState<any[]>([]);
+  const [currentCursor, setCurrentCursor] = useState<string | null>(null);
+  const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([]);
+  const [items, setItems] = useState<SubmissionRecordItem[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
 
-  const columns: ColumnsType<any> = useMemo(() => {
-    return props.components.map((item) => {
-      return {
-        key: item.id,
-        dataIndex: item.id,
+  useEffect(() => {
+    setCurrentCursor(null);
+    setCursorHistory([]);
+    setItems([]);
+    setNextCursor(null);
+    setHasMore(false);
+  }, [props.pageId]);
+
+  const columns: ColumnsType<Record<string, string | number>> = useMemo(() => {
+    return [
+      {
+        key: "submissionId",
+        dataIndex: "submissionId",
+        title: "提交ID",
+        width: 120,
+      },
+      {
+        key: "submittedAt",
+        dataIndex: "submittedAt",
+        title: "提交时间",
+        width: 180,
+      },
+      ...props.components.map((item) => ({
+        key: String(item.id),
+        dataIndex: String(item.id),
         title: item.options.title ?? "默认展示的标题",
-      };
-    });
+      })),
+    ];
   }, [props.components]);
 
-  const { loading } = useRequest(() => getQuestionData(props.pageId), {
-    onSuccess: ({ data }) => {
-      if (data.length === 0) {
-        props.handleDisable();
-        message.warning("还没有用户提交数据");
-        return;
-      }
+  const { loading } = useRequest(
+    () =>
+      getSubmissionRecords(props.pageId, {
+        limit: PAGE_SIZE,
+        cursor: currentCursor,
+      }),
+    {
+      refreshDeps: [props.pageId, currentCursor],
+      onSuccess: ({ data }) => {
+        setItems(data.items);
+        setNextCursor(data.nextCursor);
+        setHasMore(data.hasMore);
+      },
+    }
+  );
 
-      const result = data.map((res: any) => {
-        return res
-          .map((item: any) => {
-            let value: any = item.result?.value;
-            if (["radio", "checkbox"].includes(item.type)) {
-              if (!value || (Array.isArray(value) && value.length === 0)) {
-                value = "";
-              } else if (Array.isArray(value)) {
-                value = value
-                  .map(
-                    (v) =>
-                      item.options?.find((option: any) => option.id === v)?.value
-                  )
-                  .filter(Boolean)
-                  .join(",");
-              } else {
-                value = item.options?.find((option: any) => option.id === value)?.value;
-              }
-            }
+  const dataSource = useMemo(() => {
+    return items.map((item) => ({
+      key: item.submissionId,
+      submissionId: item.submissionId,
+      submittedAt: formatDateTime(item.submittedAt),
+      ...item.answers,
+    }));
+  }, [items]);
 
-            return {
-              value,
-              key: item.result.id,
-            };
-          })
-          .reduce((pre: any, cur: any) => {
-            return {
-              key: cur.key,
-              [cur.key]: cur.value,
-              ...pre,
-            };
-          }, {});
-      });
-      setDataSource(result);
-    },
-  });
+  function handlePreviousPage() {
+    if (cursorHistory.length === 0) {
+      return;
+    }
 
-  const { store } = useStorePage();
-
-  async function handleExportExcel(isWriteFile?: boolean) {
-    return jsonToExcel({
-      columns,
-      dataSource,
-      title: store.title,
-      isWriteFile: isWriteFile ?? true,
-    });
+    const nextHistory = [...cursorHistory];
+    const previousCursor = nextHistory.pop() ?? null;
+    setCursorHistory(nextHistory);
+    setCurrentCursor(previousCursor);
   }
 
-  async function handleExportZip() {
-    const excel = await jsonToExcel({
-      columns,
-      dataSource,
-      title: store.title,
-      isWriteFile: false,
-    });
+  function handleNextPage() {
+    if (!nextCursor) {
+      return;
+    }
 
-    excelToZip(excel);
+    setCursorHistory((prev) => [...prev, currentCursor]);
+    setCurrentCursor(nextCursor);
   }
 
   return (
-    <div className="relative">
-      <Table columns={columns} dataSource={dataSource} loading={loading}></Table>
-      <div className="absolute z-10 right-2 bottom-[-40px]">
+    <div className="flex h-full min-h-[640px] flex-col p-4">
+      <div className="mb-4 flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-sm text-gray-500">
+          每页 {PAGE_SIZE} 条，共展示当前分页内的提交记录。
+        </div>
+        <Button type="primary" onClick={() => downloadSubmissionCsv(props.pageId)}>
+          导出 CSV
+        </Button>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <Table
+          columns={columns}
+          dataSource={dataSource}
+          loading={loading}
+          pagination={false}
+          scroll={{ x: "max-content", y: 520 }}
+        />
+      </div>
+
+      <div className="mt-4 flex justify-end border-t border-slate-100 pt-4">
         <Space>
-          <Button onClick={handleExportZip}>导出压缩包</Button>
-          <Button type="primary" onClick={() => handleExportExcel()}>
-            导出Excel
+          <Button onClick={handlePreviousPage} disabled={cursorHistory.length === 0}>
+            上一页
+          </Button>
+          <Button onClick={handleNextPage} disabled={!hasMore || !nextCursor}>
+            下一页
           </Button>
         </Space>
       </div>

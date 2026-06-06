@@ -1,18 +1,12 @@
-import type { IComponent } from "@lowcode/share";
+import type { IComponent, QuestionDistributionResponse } from "@lowcode/share";
 import { useRequest } from "ahooks";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import ReactECharts from "echarts-for-react";
-import { getQuestionComponentSubmissions } from "~/api/low-code";
-import { useStorePage } from "../../hooks/useStorePage";
+import { getQuestionDistribution } from "~/api/low-code";
 
 interface DataSourceProps {
   currentSelected?: IComponent;
   pageId: number;
-}
-
-interface OptionItem {
-  id: string;
-  value: string;
 }
 
 interface ChartItem {
@@ -33,104 +27,28 @@ export default function DataSource({
   currentSelected,
   pageId,
 }: DataSourceProps) {
-  const [currentData, setCurrentData] = useState<string[][]>([]);
-  const [currentOptions, setCurrentOptions] = useState<OptionItem[]>([]);
+  const isDistributionType =
+    currentSelected?.type === "radio" || currentSelected?.type === "checkbox";
 
-  const { store } = useStorePage();
-
-  const isRadio = useMemo(
-    () => currentSelected?.type === "radio",
-    [currentSelected]
-  );
-  const isCheckbox = useMemo(
-    () => currentSelected?.type === "checkbox",
-    [currentSelected]
-  );
-
-  const { run: execGetQuestionData } = useRequest(
-    () => getQuestionComponentSubmissions(pageId, currentSelected!.id),
+  const { data, loading } = useRequest(
+    () => getQuestionDistribution(pageId, currentSelected!.id),
     {
-      manual: true,
-      onSuccess: ({ data }) => {
-        setCurrentData(data.map((item: any) => item.value));
-
-        if (
-          ["radio", "checkbox"].includes(currentSelected?.type ?? "") &&
-          data.length > 0 &&
-          Array.isArray(data[0]?.options)
-        ) {
-          setCurrentOptions(
-            data[0].options.map((item: any) => ({
-              id: item.id,
-              value: item.value,
-            }))
-          );
-          return;
-        }
-
-        setCurrentOptions([]);
-      },
+      ready: !!currentSelected && isDistributionType,
+      refreshDeps: [pageId, currentSelected?.id, currentSelected?.type],
     }
   );
 
-  useEffect(() => {
-    if (!currentSelected) {
-      setCurrentData([]);
-      setCurrentOptions([]);
-      return;
-    }
-
-    execGetQuestionData();
-  }, [currentSelected, execGetQuestionData]);
-
-  function generatorTexts() {
-    return (
-      <div className="p-10">
-        <span>《{store.title}》问卷填写数据：</span>
-        <br />
-        <br />
-        {currentData.flat().map((item, index) => {
-          return (
-            <span key={index}>
-              填写：{item} <br />
-            </span>
-          );
-        })}
-      </div>
-    );
-  }
-
-  const itemTitle = useMemo(
-    () => currentSelected?.options.title ?? "默认显示的标题",
-    [currentSelected]
-  );
-
-  const totalSubmissions = useMemo(() => currentData.length, [currentData]);
-
-  const result = useMemo(() => {
-    return currentData.reduce((acc, prev) => {
-      prev.forEach((id) => {
-        acc[id ?? ""] = (acc[id ?? ""] ?? 0) + 1;
-      });
-      return acc;
-    }, {} as Record<string, number>);
-  }, [currentData]);
+  const distribution = data?.data as QuestionDistributionResponse | undefined;
 
   const chartData = useMemo<ChartItem[]>(() => {
-    return currentOptions.map((item) => {
-      const count = result[item.id] ?? 0;
-      const percent =
-        totalSubmissions === 0
-          ? 0
-          : Number(((count / totalSubmissions) * 100).toFixed(2));
+    return (distribution?.options ?? []).map((item) => ({
+      name: item.label,
+      count: item.count,
+      percent: item.percent,
+    }));
+  }, [distribution]);
 
-      return {
-        name: item.value,
-        count,
-        percent,
-      };
-    });
-  }, [currentOptions, result, totalSubmissions]);
+  const itemTitle = currentSelected?.options.title ?? "默认显示的标题";
 
   function getPieOptions() {
     return {
@@ -183,7 +101,7 @@ export default function DataSource({
     };
   }
 
-  function getTopOptions() {
+  function getBarOptions() {
     return {
       backgroundColor: "#fff",
       grid: {
@@ -214,13 +132,6 @@ export default function DataSource({
             textStyle: {
               fontSize: 14,
               color: "#333",
-              rich: {
-                name: {
-                  width: 7 * 14,
-                  align: "left",
-                  textAlign: "left",
-                },
-              },
             },
           },
           splitLine: {
@@ -285,25 +196,47 @@ export default function DataSource({
     };
   }
 
-  return (
-    <>
-      {isRadio ? (
-        <ReactECharts
-          key={`${currentSelected?.id ?? "empty"}-radio`}
-          option={getPieOptions()}
-          notMerge={true}
-          style={{ height: 420 }}
-        />
-      ) : isCheckbox ? (
-        <ReactECharts
-          key={`${currentSelected?.id ?? "empty"}-checkbox`}
-          option={getTopOptions()}
-          notMerge={true}
-          style={{ height: Math.max(chartData.length * 56, 260) }}
-        />
-      ) : (
-        generatorTexts()
-      )}
-    </>
+  if (!currentSelected) {
+    return (
+      <div className="flex h-full min-h-[420px] items-center justify-center p-6 text-sm text-gray-500">
+        请选择一个问题查看统计结果。
+      </div>
+    );
+  }
+
+  if (!isDistributionType) {
+    return (
+      <div className="flex h-full min-h-[420px] items-center justify-center p-6 text-center text-sm text-gray-500">
+        文本题不提供分布统计，请在左侧分页记录中查看具体内容。
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-full min-h-[420px] items-center justify-center p-6 text-sm text-gray-500">
+        正在加载统计结果...
+      </div>
+    );
+  }
+
+  return currentSelected.type === "radio" ? (
+    <div className="h-full min-h-[420px] p-4">
+      <ReactECharts
+        key={`${currentSelected.id}-radio`}
+        option={getPieOptions()}
+        notMerge={true}
+        style={{ height: "100%", minHeight: 420 }}
+      />
+    </div>
+  ) : (
+    <div className="h-full min-h-[420px] overflow-auto p-4">
+      <ReactECharts
+        key={`${currentSelected.id}-checkbox`}
+        option={getBarOptions()}
+        notMerge={true}
+        style={{ height: Math.max(chartData.length * 56, 420) }}
+      />
+    </div>
   );
 }

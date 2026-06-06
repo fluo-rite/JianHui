@@ -11,7 +11,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { Component } from "./component.entity";
-import { ComponentData } from "./component-data.entity";
+import { Submission } from "./submission.entity";
 import { User } from "./user.entity";
 
 @Index("idx_page_account_created_at", ["account_id", "created_at"])
@@ -58,6 +58,6 @@ export class Page implements ILowCode {
   @OneToMany(() => Component, (component) => component.page)
   components?: Component[];
 
-  @OneToMany(() => ComponentData, (componentData) => componentData.page)
-  component_datas?: ComponentData[];
+  @OneToMany(() => Submission, (submission) => submission.page)
+  submissions?: Submission[];
 }
