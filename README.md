@@ -33,5 +33,5 @@ docker compose up --build
 
 ## 说明
 
-- `mysql` 和 `redis` 已纳入 compose，仓库克隆后可直接按 compose 启动。
+- `mysql` 已纳入 compose，仓库克隆后可直接按 compose 启动。
 - `.env.example` 仅为本地/示例配置模板，实际运行请按环境单独配置。
